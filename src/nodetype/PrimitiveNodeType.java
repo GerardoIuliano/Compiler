@@ -40,4 +40,9 @@ public class PrimitiveNodeType implements NodeType {
   public PrimitiveNodeType checkRel(PrimitiveNodeType type) {
     return null;
   }
+
+  @Override
+  public String toString() {
+    return this.nodoType+" ";
+  }
 }

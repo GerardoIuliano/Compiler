@@ -14,18 +14,30 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   private boolean checkContext(List<? extends AbstractNode> nodes, SymbolTable arg) {
-    if(nodes.isEmpty()){
-      return true;
+    if(nodes != null) {
+      if (nodes.isEmpty()) {
+        return true;
+      } else {
+        return nodes.stream().allMatch(node -> node.accept(this, arg));
+      }
+    }else return true;
+  }
+  private boolean checkContext(LinkedList<Statement> nodes, SymbolTable arg) {
+    if(nodes != null){
+      for (Statement s:nodes){
+        if(s != null)
+           s.accept(this, arg);
+      }
     }
-    else {
-      return nodes.stream().allMatch(node -> node.accept(this, arg));
-    }
+    return true;
   }
 
   @Override
@@ -44,12 +56,17 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(AssignOp assignOp, SymbolTable arg) {
-    return null;
+    String lexema = assignOp.getId().getValue();
+    return arg.probe(lexema);
   }
 
   @Override
   public Boolean visit(BodyOp bodyOp, SymbolTable arg) {
-    return null;
+      arg.enterScope();
+      Boolean varDeclSafe = checkContext(bodyOp.getVarDeclList(), arg);
+      Boolean statListSafe = checkContext(bodyOp.getStatList(), arg);
+      arg.exitScope();
+    return varDeclSafe && statListSafe;
   }
 
   @Override
@@ -59,19 +76,15 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(FunOp funOp, SymbolTable arg) {
-    //salvo in nome della funzione nello scope di program
-    String lexema = funOp.getId().getValue();
-    NodeType returnType = new PrimitiveNodeType(funOp.getType().getValue());
-    CompositeNodeType compositeNodeType = createComposite(funOp.getParDeclOp());
-    FunctionNodeType functionNodeType = new FunctionNodeType(compositeNodeType,returnType);
-    arg.addEntry(lexema,new SymbolTableRecord(lexema,functionNodeType, NodeKind.FUNCTION));
+    Boolean funNameSafe = saveFunName(funOp, arg);
 
-    //apro lo scope per la funzione
     arg.enterScope();
-
+    Boolean parDeclSafe = checkContext(funOp.getParDeclOp(), arg);
+    Boolean varDeclSafe = checkContext(funOp.getBodyOp().getVarDeclList(),arg);
+    Boolean statListSafe = checkContext(funOp.getBodyOp().getStatList(),arg);
     arg.exitScope();
 
-    return null;
+    return varDeclSafe && statListSafe && parDeclSafe && funNameSafe;
   }
 
   @Override
@@ -81,12 +94,38 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(ParDeclOp parDeclOp, SymbolTable arg) {
-    return null;
+    String lexema = parDeclOp.getId().getValue();
+    String type = parDeclOp.getType().getValue();
+    if(!arg.probe(lexema)) {
+      arg.addEntry(lexema, new SymbolTableRecord(lexema, new PrimitiveNodeType(type), findKind(parDeclOp)));
+      return true;
+    }else{
+      System.err.println("ParDeclOp error");
+      return false;
+    }
+
   }
 
   @Override
   public Boolean visit(VarDeclOp varDeclOp, SymbolTable arg) {
-    return null;
+    String lexema;
+    PrimitiveNodeType nodeType;
+
+    for(IdInitOp initOp : varDeclOp.getIdInitList()){
+      lexema=initOp.getId().getValue();
+      if(!arg.probe(lexema)){
+        if(!varDeclOp.getPrimitiveType().getValue().equals("var")){
+          nodeType = new PrimitiveNodeType(varDeclOp.getPrimitiveType().getValue());
+        }else{
+          nodeType = new PrimitiveNodeType(inference(initOp.getExpr()));
+        }
+        arg.addEntry(lexema,new SymbolTableRecord(lexema,nodeType,NodeKind.VARIABLE));
+      }else{
+        System.err.println("VarDeclOp error");
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -96,12 +135,17 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(ElseOp elseOp, SymbolTable arg) {
-    return null;
+    return elseOp.getBodyOp().accept(this, arg);
   }
 
   @Override
   public Boolean visit(IfstatOp ifstatOp, SymbolTable arg) {
-    return null;
+    Boolean ifSafe = ifstatOp.getBodyOp().accept(this, arg);
+    if(ifstatOp.getElseop() != null) {
+      Boolean elseSafe = ifstatOp.getElseop().accept(this, arg);
+      return ifSafe && elseSafe;
+    }
+    return ifSafe;
   }
 
   @Override
@@ -111,12 +155,12 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(ReturnOp returnOp, SymbolTable arg) {
-    return null;
+    return true;
   }
 
   @Override
   public Boolean visit(WhileOp whileOp, SymbolTable arg) {
-    return null;
+    return whileOp.getBodyOp().accept(this, arg);
   }
 
   @Override
@@ -261,5 +305,53 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
       compositeNodeType.addNodeType(nodeType);
     }
     return compositeNodeType;
+  }
+
+  private NodeKind findKind(ParDeclOp parDeclOp){
+    switch (parDeclOp.getKind()){
+      case "IN": return NodeKind.VARIABLE_IN;
+      case "OUT": return NodeKind.VARIABLE_OUT;
+      default:return NodeKind.VARIABLE;
+    }
+  }
+
+  private String inference(Expr expr){
+    if(expr instanceof IntegerConst){
+      return "integer";
+    }
+    if(expr instanceof RealConst){
+      return "real";
+    }
+    if(expr instanceof StringConst){
+      return "string";
+    }
+    if(expr instanceof TrueConst || expr instanceof FalseConst){
+      return "bool";
+    }
+    return "error type";
+  }
+
+  private Boolean saveFunName(FunOp funOp, SymbolTable arg){
+    String lexema = funOp.getId().getValue();
+    if(!arg.probe(lexema)) {
+      NodeType returnType;
+      if (funOp.getType() != null) {
+        returnType = new PrimitiveNodeType(funOp.getType().getValue());
+      } else {
+        returnType = new PrimitiveNodeType("void");
+      }
+      CompositeNodeType compositeNodeType;
+      if (funOp.getParDeclOp() != null) {
+        compositeNodeType = createComposite(funOp.getParDeclOp());
+      } else {
+        compositeNodeType = new CompositeNodeType(new ArrayList<NodeType>());
+      }
+      FunctionNodeType functionNodeType = new FunctionNodeType(compositeNodeType, returnType);
+      arg.addEntry(lexema, new SymbolTableRecord(lexema, functionNodeType, NodeKind.FUNCTION));
+      return true;
+    }else{
+      System.err.println("FunOp error");
+      return false;
+    }
   }
 }
