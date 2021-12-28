@@ -1,5 +1,6 @@
 package visitor;
 
+import error.ErrorHandler;
 import nodekind.NodeKind;
 import nodetype.CompositeNodeType;
 import nodetype.FunctionNodeType;
@@ -14,10 +15,10 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
-import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
@@ -31,10 +32,14 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
     }else return true;
   }
   private boolean checkContext(LinkedList<Statement> nodes, SymbolTable arg) {
+    Boolean returnSafe = true;
     if(nodes != null){
       for (Statement s:nodes){
         if(s != null)
-           s.accept(this, arg);
+         returnSafe = s.accept(this, arg);
+         if(!returnSafe){
+           return false;
+         }
       }
     }
     return true;
@@ -48,7 +53,7 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
     boolean isBodySafe = program.getBodyOp().accept(this,arg);
     boolean isProgramSafe = isFunctionSafe && isVariableSafe && isBodySafe;
     if(!isProgramSafe){
-      System.err.println("Program Error");
+      ErrorHandler errorHandler = new ErrorHandler("Errore di compilazione");
     }
     arg.exitScope();
     return isProgramSafe;
@@ -57,7 +62,11 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
   @Override
   public Boolean visit(AssignOp assignOp, SymbolTable arg) {
     String lexema = assignOp.getId().getValue();
-    return arg.probe(lexema);
+    Optional<SymbolTableRecord> tableRecord = arg.lookup(lexema);
+    if(tableRecord.isEmpty()){
+      new ErrorHandler("Variabile "+assignOp.getId().getValue()+" non dichiarata ");
+      return false;
+    }else return true;
   }
 
   @Override
@@ -100,7 +109,7 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
       arg.addEntry(lexema, new SymbolTableRecord(lexema, new PrimitiveNodeType(type), findKind(parDeclOp)));
       return true;
     }else{
-      System.err.println("ParDeclOp error");
+      new ErrorHandler("Errore dichiarazione multipla parametri");
       return false;
     }
 
@@ -121,7 +130,7 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
         }
         arg.addEntry(lexema,new SymbolTableRecord(lexema,nodeType,NodeKind.VARIABLE));
       }else{
-        System.err.println("VarDeclOp error");
+        new ErrorHandler("Errore dichiarazione multipla variabili");
         return false;
       }
     }
@@ -151,6 +160,7 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
   @Override
   public Boolean visit(ReadOp readOp, SymbolTable arg) {
     return null;
+    //return checkContext(readOp.getIds(),arg) && readOp.getExpr().accept(this, arg);
   }
 
   @Override
@@ -160,17 +170,23 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(WhileOp whileOp, SymbolTable arg) {
-    return whileOp.getBodyOp().accept(this, arg);
+    Boolean exprSafe = whileOp.getExpr().accept(this, arg);
+    return exprSafe && whileOp.getBodyOp().accept(this, arg);
   }
 
   @Override
   public Boolean visit(WriteOp writeOp, SymbolTable arg) {
+    //writeOp.getExpr().accept(this, arg);
     return null;
   }
 
   @Override
   public Boolean visit(Id id, SymbolTable arg) {
-    return null;
+    Optional<SymbolTableRecord> tableRecord = arg.lookup(id.getValue());
+    if(tableRecord.isEmpty()){
+      new ErrorHandler("Variabile "+id.getValue()+" non dichiarata ");
+      return false;
+    }else return true;
   }
 
   @Override
@@ -230,7 +246,9 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(LTOp ltOp, SymbolTable arg) {
-    return null;
+    Boolean lfSafe = ltOp.getLeftValue().accept(this, arg);
+    Boolean rgSafe = ltOp.getRightValue().accept(this, arg);
+    return lfSafe && rgSafe;
   }
 
   @Override
