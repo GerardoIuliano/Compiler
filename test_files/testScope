@@ -1,0 +1,6 @@
+main
+    integer a,b;
+        while a<b loop
+            string a;
+        end loop;
+end main;
