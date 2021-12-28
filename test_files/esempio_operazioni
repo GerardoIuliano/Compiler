@@ -64,7 +64,7 @@ main
         ris := scegli_operazione(op, a, b);
         ?: "Risultato:" & ris;
 
-        % risp 'vuoi continuare? (si/no):\t';
+        % ris 'vuoi continuare? (si/no):\t';
     end loop;
 
 end main;

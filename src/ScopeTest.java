@@ -14,16 +14,15 @@ public class ScopeTest {
 
   public static void main(String[] args) throws Exception {
     StringTable table = new ArrayStringTable();
-    StackSymbolTable symbolTable = new StackSymbolTable(table);
     lexer = new Lexer(table);
+    StackSymbolTable symbolTable = new StackSymbolTable(table);
 
     if(lexer.initialize(args[0])) {
-      System.out.println(args[0]);
       parser = new Parser(lexer);
 
       Program program = (Program) parser.parse().value;
       ScopeCheckerVisitor scopeCheckerVisitor = new ScopeCheckerVisitor();
-      program.accept(scopeCheckerVisitor,symbolTable);
+      program.accept(scopeCheckerVisitor, symbolTable);
       System.out.println(symbolTable.toString());
     } else {
       System.out.println("File not found");
