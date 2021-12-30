@@ -11,7 +11,6 @@ public interface Visitor<T, P> {
   T visit(Program program, P arg);
   T visit(AssignOp assignOp, P arg);
   T visit(BodyOp bodyOp, P arg);
-  T visit(StringConst stringConst, P arg);
   T visit(FunOp funOp, P arg);
   T visit(IdInitOp idInitOp, P arg);
   T visit(ParDeclOp parDeclOp, P arg);
@@ -43,6 +42,7 @@ public interface Visitor<T, P> {
   T visit(FalseConst falseConst, P arg);
   T visit(IntegerConst integerConst, P arg);
   T visit(RealConst realConst, P arg);
+  T visit(StringConst stringConst, P arg);
   T visit(AddOp addOp, P arg);
   T visit(DiffOp diffOp, P arg);
   T visit(DivIntOp divIntOp, P arg);
