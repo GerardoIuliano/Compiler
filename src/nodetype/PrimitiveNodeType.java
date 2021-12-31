@@ -45,4 +45,15 @@ public class PrimitiveNodeType implements NodeType {
   public String toString() {
     return this.nodoType+" ";
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if(obj == null)
+      return false;
+    if(obj instanceof PrimitiveNodeType){
+      PrimitiveNodeType type = (PrimitiveNodeType) obj;
+      return this.nodoType.equals(type.nodoType);
+    }
+    return false;
+  }
 }

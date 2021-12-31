@@ -1,0 +1,3 @@
+main
+    integer i := 3, a := 2;
+end main;

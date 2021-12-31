@@ -1,5 +1,7 @@
 package nodetype;
 
+import error.ErrorHandler;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,10 @@ public class TypeTable {
 
     this.typeTable.add(new TypeTableRecord("AND",bool,bool,bool));
     this.typeTable.add(new TypeTableRecord("OR",bool,bool,bool));
+
+    this.typeTable.add(new TypeTableRecord("NOT",bool,null,bool));
+    this.typeTable.add(new TypeTableRecord("MINUS",integer,null,integer));
+    this.typeTable.add(new TypeTableRecord("MINUS",real,null,real));
   }
 
   public NodeType check(String op, NodeType arg1, NodeType arg2){
@@ -45,9 +51,19 @@ public class TypeTable {
         return t.getResult();
       }
     }
+    new ErrorHandler("Errore di tipo");
     return new PrimitiveNodeType("error");
   }
 
+  public NodeType check(String op, NodeType arg1){
+    for(TypeTableRecord t : this.typeTable){
+      if(t.getOp().equals(op) && t.getType1().equals(arg1)){
+        return t.getResult();
+      }
+    }
+    new ErrorHandler("Errore di tipo");
+    return new PrimitiveNodeType("error");
+  }
 
 
 }

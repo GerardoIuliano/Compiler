@@ -1,10 +1,13 @@
 package visitor;
 
+import error.ErrorHandler;
 import nodetype.NodeType;
 import nodetype.PrimitiveNodeType;
 import nodetype.TypeTable;
 import nodetype.TypeTableRecord;
+import org.w3c.dom.Node;
 import semantic.SymbolTable;
+import semantic.SymbolTableRecord;
 import syntax.*;
 import syntax.expr.*;
 import syntax.expr.arithop.*;
@@ -12,23 +15,85 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+
 public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   private static TypeTable typeTable = new TypeTable();
 
+  private NodeType checkContext(List<? extends AbstractNode> nodes, SymbolTable arg) {
+    NodeType returnSafe = new PrimitiveNodeType("");
+    if (nodes != null) {
+      for (AbstractNode s : nodes) {
+        if (s != null) {
+          returnSafe = s.accept(this, arg);
+          if (!returnSafe.equals(new PrimitiveNodeType("notype"))) {
+            new ErrorHandler("Error ");
+            return new PrimitiveNodeType("error");
+          }
+        }
+      }
+    }
+    return new PrimitiveNodeType("notype");
+  }
+
+  private NodeType checkContext(LinkedList<Statement> nodes, SymbolTable arg) {
+    NodeType returnSafe = new PrimitiveNodeType("");
+    if(nodes != null){
+      for (Statement s:nodes){
+        if(s != null) {
+            returnSafe = s.accept(this, arg);
+          if(!returnSafe.equals(new PrimitiveNodeType("notype"))){
+            new ErrorHandler("Error statement");
+            return new PrimitiveNodeType("error");
+          }
+        }
+      }
+    }
+    return new PrimitiveNodeType("notype");
+  }
+
   @Override
   public NodeType visit(Program program, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    NodeType bodyType = program.getBodyOp().accept(this, arg);
+    NodeType varType = checkContext(program.getVarDeclOpList(), arg);
+    arg.exitScope();
+    if(bodyType.equals(new PrimitiveNodeType("notype")) && varType.equals(new PrimitiveNodeType("notype")))
+      return new PrimitiveNodeType("notype");
+    else{
+      new ErrorHandler("Program Error");
+      return new PrimitiveNodeType("error");
+    }
+
   }
 
   @Override
   public NodeType visit(AssignOp assignOp, SymbolTable arg) {
-    return null;
+    NodeType idType = assignOp.getId().accept(this, arg);
+    NodeType exprType = assignOp.getExpr().accept(this, arg);
+    if(idType.equals(exprType))
+      return new PrimitiveNodeType("notype");
+    else {
+      new ErrorHandler("Assign: Type Mismatch");
+      return new PrimitiveNodeType("error");
+    }
   }
 
   @Override
   public NodeType visit(BodyOp bodyOp, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    NodeType varType = checkContext(bodyOp.getVarDeclList(), arg);
+    NodeType statType = checkContext(bodyOp.getStatList(), arg);
+    arg.exitScope();
+    if(varType.equals(statType))
+      return new PrimitiveNodeType("notype");
+    else {
+      new ErrorHandler("BodyOp error");
+      return new PrimitiveNodeType("error");
+    }
   }
 
   @Override
@@ -38,7 +103,14 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(IdInitOp idInitOp, SymbolTable arg) {
-    return null;
+    NodeType idType = idInitOp.getId().accept(this, arg);
+    NodeType exprType = idInitOp.getExpr().accept(this,arg);
+    if(idType.equals(exprType))
+      return new PrimitiveNodeType("notype");
+    else{
+      new ErrorHandler("IdInitOp: Type Mismatch");
+      return new PrimitiveNodeType("error");
+    }
   }
 
   @Override
@@ -48,7 +120,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(VarDeclOp varDeclOp, SymbolTable arg) {
-    return null;
+    return checkContext(varDeclOp.getIdInitList(),arg);
   }
 
   @Override
@@ -88,7 +160,8 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(Id id, SymbolTable arg) {
-    return null;
+    Optional<SymbolTableRecord> record = arg.lookup("i");
+    return record.get().getNodeType();
   }
 
   @Override
@@ -167,12 +240,15 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(NEOp neOp, SymbolTable arg) {
-    return null;
+    NodeType arg1 = neOp.getLeftValue().accept(this, arg);
+    NodeType arg2 = neOp.getRightValue().accept(this, arg);
+    return typeTable.check("REL",arg1,arg2);
   }
 
   @Override
   public NodeType visit(NotOp notOp, SymbolTable arg) {
-    return null;
+    NodeType arg1 = notOp.getExpr().accept(this,arg);
+    return typeTable.check("NOT",arg1);
   }
 
   @Override
