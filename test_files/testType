@@ -1,3 +1,10 @@
+real effe;
+
+fun somma(integer a, integer b):integer
+    return a + b;
+end fun;
+
 main
-    integer i := 3, a := 2;
+    integer due := 2;
+    var str := "ueueue";
 end main;

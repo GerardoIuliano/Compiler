@@ -40,6 +40,10 @@ public class CompositeNodeType implements NodeType {
     this.types.add(type);
   }
 
+  public List<NodeType> getTypes() {
+    return this.types;
+  }
+
   @Override
   public int hashCode() {
     int hash = 7;

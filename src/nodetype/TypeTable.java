@@ -7,16 +7,16 @@ import java.util.List;
 
 public class TypeTable {
 
-  private List<TypeTableRecord> typeTable;
+  private final List<TypeTableRecord> typeTable;
 
-  private static NodeType integer = new PrimitiveNodeType("integer");
-  private static NodeType real = new PrimitiveNodeType("real");
-  private static NodeType string = new PrimitiveNodeType("string");
-  private static NodeType bool = new PrimitiveNodeType("bool");
+  private static final NodeType integer = new PrimitiveNodeType("integer");
+  private static final NodeType real = new PrimitiveNodeType("real");
+  private static final NodeType string = new PrimitiveNodeType("string");
+  private static final NodeType bool = new PrimitiveNodeType("bool");
 
 
   public TypeTable() {
-    this.typeTable = new ArrayList<TypeTableRecord>();
+    this.typeTable = new ArrayList<>();
 
     /* ARITH_OP => ADD,DIFF,DIV,MUL,POW */
     this.typeTable.add(new TypeTableRecord("ARITH",integer,integer,integer));
@@ -40,6 +40,7 @@ public class TypeTable {
     this.typeTable.add(new TypeTableRecord("AND",bool,bool,bool));
     this.typeTable.add(new TypeTableRecord("OR",bool,bool,bool));
 
+    //Unary operation uminus, minus, not
     this.typeTable.add(new TypeTableRecord("NOT",bool,null,bool));
     this.typeTable.add(new TypeTableRecord("MINUS",integer,null,integer));
     this.typeTable.add(new TypeTableRecord("MINUS",real,null,real));

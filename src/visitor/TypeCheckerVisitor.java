@@ -1,10 +1,7 @@
 package visitor;
 
 import error.ErrorHandler;
-import nodetype.NodeType;
-import nodetype.PrimitiveNodeType;
-import nodetype.TypeTable;
-import nodetype.TypeTableRecord;
+import nodetype.*;
 import org.w3c.dom.Node;
 import semantic.SymbolTable;
 import semantic.SymbolTableRecord;
@@ -15,6 +12,7 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
+import javax.swing.text.html.Option;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +28,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
         if (s != null) {
           returnSafe = s.accept(this, arg);
           if (!returnSafe.equals(new PrimitiveNodeType("notype"))) {
-            new ErrorHandler("Error ");
+            new ErrorHandler("Error Type");
             return new PrimitiveNodeType("error");
           }
         }
@@ -58,16 +56,16 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   @Override
   public NodeType visit(Program program, SymbolTable arg) {
     arg.enterScope();
-    NodeType bodyType = program.getBodyOp().accept(this, arg);
     NodeType varType = checkContext(program.getVarDeclOpList(), arg);
+    NodeType funType = checkContext(program.getFunOpList(), arg);
+    NodeType bodyType = program.getBodyOp().accept(this, arg);
     arg.exitScope();
-    if(bodyType.equals(new PrimitiveNodeType("notype")) && varType.equals(new PrimitiveNodeType("notype")))
+    if (bodyType.equals(new PrimitiveNodeType("notype")) && varType.equals(new PrimitiveNodeType("notype")) && funType.equals(new PrimitiveNodeType("notype"))) {
       return new PrimitiveNodeType("notype");
-    else{
+    } else {
       new ErrorHandler("Program Error");
       return new PrimitiveNodeType("error");
     }
-
   }
 
   @Override
@@ -98,24 +96,37 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(FunOp funOp, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    /*
+    NodeType idType = funOp.getId().accept(this, arg);
+    NodeType type = funOp.getType().accept(this, arg);
+    NodeType bodType = funOp.getBodyOp().accept(this, arg);
+    NodeType parType = checkContext(funOp.getParDeclOp(), arg);
+    */
+    arg.exitScope();
+    return new PrimitiveNodeType("notype");
   }
 
   @Override
   public NodeType visit(IdInitOp idInitOp, SymbolTable arg) {
     NodeType idType = idInitOp.getId().accept(this, arg);
-    NodeType exprType = idInitOp.getExpr().accept(this,arg);
-    if(idType.equals(exprType))
-      return new PrimitiveNodeType("notype");
-    else{
-      new ErrorHandler("IdInitOp: Type Mismatch");
-      return new PrimitiveNodeType("error");
+
+    if(idInitOp.getExpr() != null) {
+      NodeType exprType = idInitOp.getExpr().accept(this,arg);
+      if(idType.equals(exprType)) {
+        return new PrimitiveNodeType("notype");
+      } else {
+        new ErrorHandler("IdInitOp: Type Mismatch");
+        return new PrimitiveNodeType("error");
+      }
+    } else {
+     return new PrimitiveNodeType("notype");
     }
   }
 
   @Override
   public NodeType visit(ParDeclOp parDeclOp, SymbolTable arg) {
-    return null;
+    return new PrimitiveNodeType(parDeclOp.getType().getValue());
   }
 
   @Override
@@ -125,58 +136,120 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(CallFunOp callFunOp, SymbolTable arg) {
-    return null;
+    SymbolTableRecord record = arg.lookup(callFunOp.getId().getValue()).get();
+
+    //dal record della symbol table si estrae tipo di ritorno e tipi dei parametri
+    FunctionNodeType funType = (FunctionNodeType) record.getNodeType();
+    PrimitiveNodeType returnType = (PrimitiveNodeType) funType.getNodeType();
+    CompositeNodeType paramsType = funType.getParamsType();
+    List<NodeType> params = paramsType.getTypes(); //presa dal record
+
+    LinkedList<Expr> funParams = callFunOp.getParams();
+    //per ogni espressione demando l'accept e costruisco una lista di nodetype
+    List<NodeType> params2 = new LinkedList<>();
+    for(Expr e: funParams) {
+      params2.add(e.accept(this, arg));
+    }
+    //controllo se il numero di parametri è rispettato
+    if(params.size() != params2.size()) {
+      new ErrorHandler("Errore CallFunOp: numero argomenti funzione non corrispondente");
+    } else { //controlla i tipi di ogni parametro
+      for(int i = 0; i< params.size(); i++){
+        PrimitiveNodeType first = (PrimitiveNodeType) params.get(i);
+        PrimitiveNodeType second = (PrimitiveNodeType) params2.get(i);
+        //controlla il matching
+        if(!first.equals(second))
+          new ErrorHandler("Error CallFunOp type mismatch argomenti");
+      }
+      //match corretti
+      return returnType;
+    }
+
+    return new PrimitiveNodeType("error");
   }
 
   @Override
   public NodeType visit(ElseOp elseOp, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    NodeType bodyType = elseOp.getBodyOp().accept(this, arg);
+    arg.exitScope();
+    if(bodyType.equals(new PrimitiveNodeType("notype")))
+      return new PrimitiveNodeType("notype");
+    else
+      new ErrorHandler("ElseBody type error");
+    return new PrimitiveNodeType("error");
   }
 
   @Override
   public NodeType visit(IfstatOp ifstatOp, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    NodeType exprType = ifstatOp.getExpr().accept(this, arg);
+    NodeType bodyType = ifstatOp.getBodyOp().accept(this, arg);
+    arg.exitScope();
+    if(bodyType.equals(new PrimitiveNodeType("notype"))  && exprType.equals(new PrimitiveNodeType("bool")) ) {
+      if (ifstatOp.getElseop() != null) {
+        NodeType elseType = ifstatOp.getElseop().accept(this, arg);
+        if(elseType.equals(new PrimitiveNodeType("notype")))
+          return new PrimitiveNodeType("notype");
+      } else {
+        return new PrimitiveNodeType("notype");
+      }
+    } else {
+      new ErrorHandler("IfStat error type");
+    }
+    return new PrimitiveNodeType("notype");
   }
 
   @Override
   public NodeType visit(ReadOp readOp, SymbolTable arg) {
-    return null;
+    return new PrimitiveNodeType("notype");
   }
 
   @Override
   public NodeType visit(ReturnOp returnOp, SymbolTable arg) {
-    return null;
+    return returnOp.getExpr().accept(this, arg);
   }
 
   @Override
   public NodeType visit(WhileOp whileOp, SymbolTable arg) {
-    return null;
+    arg.enterScope();
+    NodeType exprType = whileOp.getExpr().accept(this, arg);
+    NodeType bodyType = whileOp.getBodyOp().accept(this, arg);
+    arg.exitScope();
+    if(bodyType.equals(new PrimitiveNodeType("notype"))  && exprType.equals(new PrimitiveNodeType("bool")) ) {
+        return new PrimitiveNodeType("notype");
+    } else {
+      new ErrorHandler("WhileStat error type");
+    }
+    return new PrimitiveNodeType("error");
   }
 
   @Override
   public NodeType visit(WriteOp writeOp, SymbolTable arg) {
-    return null;
+    return new PrimitiveNodeType("notype");
   }
 
   @Override
   public NodeType visit(Id id, SymbolTable arg) {
-    Optional<SymbolTableRecord> record = arg.lookup("i");
+    Optional<SymbolTableRecord> record = arg.lookup(id.getValue());
     return record.get().getNodeType();
   }
 
   @Override
   public NodeType visit(IdOutpar id, SymbolTable arg) {
-    return null;
+    Optional<SymbolTableRecord> record = arg.lookup(id.getValue());
+    return record.get().getNodeType();
   }
 
   @Override
   public NodeType visit(MinusOp minusOp, SymbolTable arg) {
-    return null;
+    NodeType arg1 = minusOp.getExpr().accept(this,arg);
+    return typeTable.check("MINUS",arg1);
   }
 
   @Override
   public NodeType visit(ParExprOp parExprOp, SymbolTable arg) {
-    return null;
+    return new PrimitiveNodeType("notype");
   }
 
   @Override
@@ -193,7 +266,8 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(UminusOp uminusOp, SymbolTable arg) {
-    return null;
+    NodeType arg1 = uminusOp.getExpr().accept(this,arg);
+    return typeTable.check("MINUS",arg1);
   }
 
   @Override
