@@ -13,6 +13,7 @@ import syntax.expr.relop.*;
 import syntax.statements.*;
 
 import javax.swing.text.html.Option;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -39,14 +40,18 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   private NodeType checkContext(LinkedList<Statement> nodes, SymbolTable arg) {
     NodeType returnSafe = new PrimitiveNodeType("");
-    if(nodes != null){
-      for (Statement s:nodes){
-        if(s != null) {
-            returnSafe = s.accept(this, arg);
-          if(!returnSafe.equals(new PrimitiveNodeType("notype"))){
-            new ErrorHandler("Error statement");
-            return new PrimitiveNodeType("error");
+    if (nodes != null) {
+      for (Statement s : nodes) {
+        if (s != null) {
+          returnSafe = s.accept(this, arg);
+
+          if (!(s instanceof ReturnOp) && !(s instanceof CallFunOp)) {
+            if (!returnSafe.equals(new PrimitiveNodeType("notype"))) {
+              new ErrorHandler("Error statement");
+              return new PrimitiveNodeType("error");
+            }
           }
+
         }
       }
     }
@@ -97,14 +102,27 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   @Override
   public NodeType visit(FunOp funOp, SymbolTable arg) {
     arg.enterScope();
-    /*
-    NodeType idType = funOp.getId().accept(this, arg);
-    NodeType type = funOp.getType().accept(this, arg);
-    NodeType bodType = funOp.getBodyOp().accept(this, arg);
-    NodeType parType = checkContext(funOp.getParDeclOp(), arg);
-    */
+
+    NodeType varList = checkContext(funOp.getBodyOp().getVarDeclList(), arg);
+    NodeType statList = checkContext(funOp.getBodyOp().getStatList(), arg);
+    //controlla che il tipo ritornato e quello dichiarato nella firma coincidano
+    for(Statement s : funOp.getBodyOp().getStatList()){
+      if(s instanceof ReturnOp){
+        NodeType returnFun = s.accept(this,arg);
+        String retOp = returnFun.toString();
+        String retFun = funOp.getType().getValue();
+        if(!(retOp.equals(retFun))) {
+          new ErrorHandler("FunOp return " + funOp.getType().getValue() + "\nReturnOp is " + returnFun);
+        }
+      }
+    }
     arg.exitScope();
-    return new PrimitiveNodeType("notype");
+
+    if(varList.equals(new PrimitiveNodeType("notype")) && statList.equals(new PrimitiveNodeType("notype")))
+      return new PrimitiveNodeType("notype");
+
+    new ErrorHandler("Fun Op Body errore di tipo");
+    return new PrimitiveNodeType("error");
   }
 
   @Override
@@ -140,16 +158,34 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
     //dal record della symbol table si estrae tipo di ritorno e tipi dei parametri
     FunctionNodeType funType = (FunctionNodeType) record.getNodeType();
-    PrimitiveNodeType returnType = (PrimitiveNodeType) funType.getNodeType();
-    CompositeNodeType paramsType = funType.getParamsType();
-    List<NodeType> params = paramsType.getTypes(); //presa dal record
+    PrimitiveNodeType returnType = (PrimitiveNodeType) funType.getNodeType(); //tipo di ritorno
 
-    LinkedList<Expr> funParams = callFunOp.getParams();
+    CompositeNodeType paramsType = funType.getParamsType(); // tipi funzione
+    List<NodeType> params = paramsType.getTypes(); //tipi
+    List<String> kinds = paramsType.getKinds(); //kind della symbol table
+
+    //parametri chiamata a funzione
+    List<Expr> funParams = callFunOp.getParams();
+    Collections.reverse(funParams);
+
     //per ogni espressione demando l'accept e costruisco una lista di nodetype
     List<NodeType> params2 = new LinkedList<>();
+
+    //scorro i parametri
+    int j = 0;
     for(Expr e: funParams) {
+
+      if(checkConstants(e)) { //expr costante
+        if(kinds.get(j).equals("OUT"))
+          new ErrorHandler("OUT param non può essere una costante");
+      } else { //expr variabile
+        if(kinds.get(j).equals("OUT") && !(e instanceof IdOutpar))
+          new ErrorHandler("OUT param atteso non risultante");
+      }
+      j++;
       params2.add(e.accept(this, arg));
     }
+
     //controllo se il numero di parametri è rispettato
     if(params.size() != params2.size()) {
       new ErrorHandler("Errore CallFunOp: numero argomenti funzione non corrispondente");
@@ -164,15 +200,21 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
       //match corretti
       return returnType;
     }
-
     return new PrimitiveNodeType("error");
+  }
+
+
+  //true se e è una costante
+  public boolean checkConstants(Expr e) {
+    if(e instanceof FalseConst ||  e instanceof IntegerConst || e instanceof RealConst || e instanceof StringConst || e instanceof TrueConst)
+      return true;
+    else
+      return false;
   }
 
   @Override
   public NodeType visit(ElseOp elseOp, SymbolTable arg) {
-    arg.enterScope();
     NodeType bodyType = elseOp.getBodyOp().accept(this, arg);
-    arg.exitScope();
     if(bodyType.equals(new PrimitiveNodeType("notype")))
       return new PrimitiveNodeType("notype");
     else
@@ -182,10 +224,9 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(IfstatOp ifstatOp, SymbolTable arg) {
-    arg.enterScope();
     NodeType exprType = ifstatOp.getExpr().accept(this, arg);
     NodeType bodyType = ifstatOp.getBodyOp().accept(this, arg);
-    arg.exitScope();
+
     if(bodyType.equals(new PrimitiveNodeType("notype"))  && exprType.equals(new PrimitiveNodeType("bool")) ) {
       if (ifstatOp.getElseop() != null) {
         NodeType elseType = ifstatOp.getElseop().accept(this, arg);
@@ -214,9 +255,10 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(WhileOp whileOp, SymbolTable arg) {
     arg.enterScope();
     NodeType exprType = whileOp.getExpr().accept(this, arg);
-    NodeType bodyType = whileOp.getBodyOp().accept(this, arg);
+    NodeType varType = checkContext(whileOp.getBodyOp().getVarDeclList(), arg);
+    NodeType statType = checkContext(whileOp.getBodyOp().getStatList(), arg);
     arg.exitScope();
-    if(bodyType.equals(new PrimitiveNodeType("notype"))  && exprType.equals(new PrimitiveNodeType("bool")) ) {
+    if(statType.equals(new PrimitiveNodeType("notype")) && varType.equals(new PrimitiveNodeType("notype"))  && exprType.equals(new PrimitiveNodeType("bool")) ) {
         return new PrimitiveNodeType("notype");
     } else {
       new ErrorHandler("WhileStat error type");

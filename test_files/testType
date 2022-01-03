@@ -1,10 +1,14 @@
 real effe;
 
-fun somma(integer a, integer b):integer
-    return a + b;
+fun somma(integer a, out real b, out string c, out integer d):integer
+    real bibi;
+    string scritta;
+    return scritta;
 end fun;
 
 main
-    integer due := 2;
-    var str := "ueueue";
+    integer f, g;
+    string aaa;
+    real bbb;
+    integer due := somma(f, @bbb, @aaa, @g);
 end main;

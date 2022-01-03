@@ -2,6 +2,7 @@ package syntax;
 
 import visitor.Visitor;
 
+import java.util.Collections;
 import java.util.LinkedList;
 
 public class Program extends AbstractNode{
