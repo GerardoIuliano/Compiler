@@ -30,12 +30,19 @@ public class TypeTable {
     this.typeTable.add(new TypeTableRecord("DIVINT",real,real,integer));
 
     this.typeTable.add(new TypeTableRecord("STRCAT",string,string,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",string,integer,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",integer,string,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",string,real,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",real,string,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",string,bool,string));
+    this.typeTable.add(new TypeTableRecord("STRCAT",bool,string,string));
 
     /* REL_OP => EQ,LT,LE,GT,GE */
     this.typeTable.add(new TypeTableRecord("REL",integer,integer,bool));
     this.typeTable.add(new TypeTableRecord("REL",integer,real,bool));
     this.typeTable.add(new TypeTableRecord("REL",real,integer,bool));
     this.typeTable.add(new TypeTableRecord("REL",real,real,bool));
+    this.typeTable.add(new TypeTableRecord("REL",string,string,bool));
 
     this.typeTable.add(new TypeTableRecord("AND",bool,bool,bool));
     this.typeTable.add(new TypeTableRecord("OR",bool,bool,bool));
@@ -52,7 +59,7 @@ public class TypeTable {
         return t.getResult();
       }
     }
-    new ErrorHandler("Errore di tipo");
+    new ErrorHandler("Errore di tipo" + ", operazione: " + op + ", arg1: " + arg1.toString() + ", arg2: " + arg2.toString());
     return new PrimitiveNodeType("error");
   }
 
@@ -62,7 +69,7 @@ public class TypeTable {
         return t.getResult();
       }
     }
-    new ErrorHandler("Errore di tipo");
+    new ErrorHandler("Errore di tipo, " + "operazione: " + op + ", arg1: " + arg1.toString());
     return new PrimitiveNodeType("error");
   }
 

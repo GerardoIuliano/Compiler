@@ -6,7 +6,7 @@ Programma MyFun in cui
 4- All'input 'no' oppure 'si' il programma conclude oppure mostra il menu iniziale, rispettivamente.
 #
 
-fun scegli_operazione(integer op, integer a, integer b)
+fun scegli_operazione(integer op, integer a, integer b):integer
 
     if op = 1 then
     	return somma(a, b);

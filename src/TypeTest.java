@@ -31,6 +31,7 @@ public class TypeTest {
       NodeType typeCheck = program.accept(typeCheckerVisitor, symbolTable);
       System.out.println("TypeCheck: "+typeCheck.toString());
 
+
     } else {
       System.out.println("File not found");
     }

@@ -43,7 +43,7 @@ public class PrimitiveNodeType implements NodeType {
 
   @Override
   public String toString() {
-    return this.nodoType+" ";
+    return this.nodoType;
   }
 
   @Override

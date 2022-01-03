@@ -189,7 +189,10 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(ReadOp readOp, SymbolTable arg) {
-    boolean expSafe = readOp.getExpr().accept(this, arg);
+    boolean expSafe = true;
+    if(readOp.getExpr() != null)
+      expSafe = readOp.getExpr().accept(this, arg);
+
     boolean idSafe = checkContext(readOp.getIds(), arg);
     boolean isSafe = expSafe && idSafe;
     if(!isSafe)
@@ -454,7 +457,9 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
     CompositeNodeType compositeNodeType = new CompositeNodeType(new ArrayList<NodeType>());
     for(ParDeclOp p : list){
       NodeType nodeType = new PrimitiveNodeType(p.getType().getValue());
+
       compositeNodeType.addNodeType(nodeType);
+      compositeNodeType.addKind(p.getKind());
     }
     return compositeNodeType;
   }
