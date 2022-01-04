@@ -3,7 +3,11 @@ real effe;
 fun somma(integer a, out real b, out string c, out integer d):integer
     real bibi;
     string scritta;
-    return scritta;
+    return 2;
+end fun;
+
+fun prova()
+    ?: "ciao";
 end fun;
 
 main

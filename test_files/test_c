@@ -1,0 +1,12 @@
+integer glob := 2;
+
+fun somma(integer a, integer b):integer
+    integer res := a + b;
+    return res;
+end fun;
+
+main
+    integer c := 1;
+    var a := 1, b := 2;
+    integer risultato := somma(a, b);
+end main;
