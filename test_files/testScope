@@ -1,10 +1,6 @@
-real effe;
-
-fun somma(integer a, integer b):integer
-    return a + b;
-end fun;
 
 main
-    integer due := 2;
-    var str := "ueueue";
+    bool v;
+    v := 1 < 2;
+
 end main;

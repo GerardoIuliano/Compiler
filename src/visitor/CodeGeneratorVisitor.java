@@ -1,5 +1,6 @@
 package visitor;
 
+import nodekind.NodeKind;
 import nodetype.NodeType;
 import nodetype.PrimitiveNodeType;
 import semantic.SymbolTable;
@@ -10,13 +11,12 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringJoiner;
 
 public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
-
 
   //data una lista di nodi esegua la join dei valori
   private String beautify(List<? extends AbstractNode> nodes, StringJoiner joiner, SymbolTable table){
@@ -34,6 +34,8 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Program program, SymbolTable arg) {
+    Collections.reverse(program.getFunOpList());
+    Collections.reverse(program.getVarDeclOpList());
     String vars = "", funs = "";
     arg.enterScope();
     if(program.getVarDeclOpList() != null)
@@ -41,10 +43,9 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     if(program.getFunOpList() != null)
       funs = beautify(program.getFunOpList(), new StringJoiner("\n"), arg);
 
-
     String main = program.getBodyOp().accept(this, arg);
     arg.exitScope();
-    return String.format("include<stdio.h>\ninclude<stdlib.h>\ninclude<math.h>\ninclude<stdbool.h>\ninclude<stdlib.h>\ninclude<stddef.h>\ninclude<string.h>\n\n" + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
+    return String.format("#include<stdio.h>\n#include<stdlib.h>\n#include<math.h>\n#include<stdbool.h>\n#include<stdlib.h>\n#include<stddef.h>\n#include<string.h>\n\n" + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
   }
 
   @Override
@@ -56,27 +57,37 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(BodyOp bodyOp, SymbolTable arg) {
+    Collections.reverse(bodyOp.getStatList());
+    Collections.reverse(bodyOp.getVarDeclList());
     String vars = "", stats = "";
-
+    arg.enterScope();
     if(bodyOp.getVarDeclList() != null)
       vars = beautify(bodyOp.getVarDeclList(), new StringJoiner("\n"), arg);
     if(bodyOp.getStatList() != null)
       stats = beautify(bodyOp.getStatList(), new StringJoiner("\n"), arg);
-
+    arg.exitScope();
     return String.format("%s\n\n%s\n", vars, stats);
   }
 
   @Override
   public String visit(FunOp funOp, SymbolTable arg) {
+    //Collections.reverse(funOp.getParDeclOp());
+    Collections.reverse(funOp.getBodyOp().getVarDeclList());
+    Collections.reverse(funOp.getBodyOp().getStatList());
     String params = "";
-    arg.enterScope();
     String fname = funOp.getId().accept(this, arg);
-
+    arg.enterScope();
     if(funOp.getParDeclOp() != null)
       params = beautify(funOp.getParDeclOp(), new StringJoiner(","), arg);
-
-    String body = funOp.getBodyOp().accept(this, arg);
-    String retType = funOp.getType().accept(this, arg);
+    String vars = "", stats = "";
+    if(funOp.getBodyOp().getVarDeclList() != null)
+      vars = beautify(funOp.getBodyOp().getVarDeclList(), new StringJoiner("\n"), arg);
+    if(funOp.getBodyOp().getStatList() != null)
+      stats = beautify(funOp.getBodyOp().getStatList(), new StringJoiner("\n"), arg);
+    String body = vars+stats;
+    String retType="void";
+    if(funOp.getType()!=null)
+      retType = funOp.getType().accept(this, arg);
     arg.exitScope();
     return String.format("%s %s(%s){\n%s\n}\n", retType, fname, params, body);
   }
@@ -100,6 +111,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(VarDeclOp varDeclOp, SymbolTable arg) {
+    //Collections.reverse(varDeclOp.getIdInitList());
     String type = varDeclOp.getPrimitiveType().accept(this, arg);
     String ids = beautify(varDeclOp.getIdInitList(), new StringJoiner(","), arg);
     return String.format("%s %s;", type, ids);
@@ -111,9 +123,9 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     StringJoiner funJoiner = new StringJoiner(", ");
     if(callFunOp.getParams() != null) {
       callFunOp.getParams().forEach(i -> funJoiner.add(i.accept(this, arg)));
-      return String.format("%s(%s)", fName, funJoiner.toString());
+      return String.format("%s(%s);", fName, funJoiner.toString());
     }
-    return String.format("%s()", fName);
+    return String.format("%s();", fName);
   }
 
   @Override
@@ -135,12 +147,16 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(ReadOp readOp, SymbolTable arg) {
-    String expr = readOp.getExpr().accept(this, arg);
+    String expr="";
+    if(readOp.getExpr()!= null)
+      expr = readOp.getExpr().accept(this, arg);
+
     StringJoiner scanfs = new StringJoiner("\n");
 
+    String finalExpr = expr;
     readOp.getIds().forEach(var -> {
       String type = this.formatType(arg.lookup(var.getValue()).get().getNodeType());
-      scanfs.add(String.format("scanf(\"%s%s\", &%s);", expr, type, var.getValue()));
+      scanfs.add(String.format("scanf(\"%s%s\", &%s);", finalExpr, type, var.getValue()));
     });
     return scanfs.toString();
   }
@@ -173,17 +189,20 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   @Override
   public String visit(WriteOp writeOp, SymbolTable arg) {
     String expr = writeOp.getExpr().accept(this, arg);
-    return String.format("printf(%s);\n", expr);
+    return writeOp.getWriteC(expr,writeOp.getExpr());
   }
 
   @Override
   public String visit(Id id, SymbolTable arg) {
-    return id.getValue();
+    if(!arg.lookup(id.getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT))
+      return id.getValue();
+    else
+      return "*"+id.getValue();
   }
 
   @Override
   public String visit(IdOutpar id, SymbolTable arg) {
-    return id.getValue();
+    return "&"+id.getValue();
   }
 
   @Override

@@ -110,9 +110,12 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
       if(s instanceof ReturnOp){
         NodeType returnFun = s.accept(this,arg);
         String retOp = returnFun.toString();
-        String retFun = funOp.getType().getValue();
+        String retFun = "";
+        if(funOp.getType() != null)
+          retFun = funOp.getType().getValue();
+
         if(!(retOp.equals(retFun))) {
-          new ErrorHandler("FunOp return " + funOp.getType().getValue() + "\nReturnOp is " + returnFun);
+          new ErrorHandler("FunOp return " + retFun + "\nReturnOp is " + returnFun);
         }
       }
     }
@@ -198,6 +201,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
           new ErrorHandler("Error CallFunOp type mismatch argomenti");
       }
       //match corretti
+      callFunOp.setNodeType(returnType);
       return returnType;
     }
     return new PrimitiveNodeType("error");
@@ -268,12 +272,18 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(WriteOp writeOp, SymbolTable arg) {
-    return new PrimitiveNodeType("notype");
+    if(!writeOp.getExpr().accept(this, arg).equals(new PrimitiveNodeType("void")))
+      return new PrimitiveNodeType("notype");
+    else{
+      new ErrorHandler("WriteOp: invalid use of void expression");
+      return new PrimitiveNodeType("error");
+    }
   }
 
   @Override
   public NodeType visit(Id id, SymbolTable arg) {
     Optional<SymbolTableRecord> record = arg.lookup(id.getValue());
+    id.setNodeType(record.get().getNodeType());
     return record.get().getNodeType();
   }
 
@@ -286,6 +296,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   @Override
   public NodeType visit(MinusOp minusOp, SymbolTable arg) {
     NodeType arg1 = minusOp.getExpr().accept(this,arg);
+    minusOp.setNodeType(typeTable.check("MINUS",arg1));
     return typeTable.check("MINUS",arg1);
   }
 
@@ -316,13 +327,15 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(AndOp andOp, SymbolTable arg) {
     NodeType arg1 = andOp.getLeftValue().accept(this,arg);
     NodeType arg2 = andOp.getRightValue().accept(this,arg);
-    return typeTable.check("OR",arg1,arg2);
+    andOp.setNodeType(typeTable.check("AND",arg1,arg2));
+    return typeTable.check("AND",arg1,arg2);
   }
 
   @Override
   public NodeType visit(EQOp eqOp, SymbolTable arg) {
     NodeType arg1 = eqOp.getLeftValue().accept(this,arg);
     NodeType arg2 = eqOp.getRightValue().accept(this,arg);
+    eqOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
@@ -330,6 +343,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(GEOp geOp, SymbolTable arg) {
     NodeType arg1 = geOp.getLeftValue().accept(this,arg);
     NodeType arg2 = geOp.getRightValue().accept(this,arg);
+    geOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
@@ -337,6 +351,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(GTOp gtOp, SymbolTable arg) {
     NodeType arg1 = gtOp.getLeftValue().accept(this,arg);
     NodeType arg2 = gtOp.getRightValue().accept(this,arg);
+    gtOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
@@ -344,6 +359,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(LEOp leOp, SymbolTable arg) {
     NodeType arg1 = leOp.getLeftValue().accept(this,arg);
     NodeType arg2 = leOp.getRightValue().accept(this,arg);
+    leOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
@@ -351,6 +367,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(LTOp ltOp, SymbolTable arg) {
     NodeType arg1 = ltOp.getLeftValue().accept(this,arg);
     NodeType arg2 = ltOp.getRightValue().accept(this,arg);
+    ltOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
@@ -358,12 +375,14 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(NEOp neOp, SymbolTable arg) {
     NodeType arg1 = neOp.getLeftValue().accept(this, arg);
     NodeType arg2 = neOp.getRightValue().accept(this, arg);
+    neOp.setNodeType(typeTable.check("REL",arg1,arg2));
     return typeTable.check("REL",arg1,arg2);
   }
 
   @Override
   public NodeType visit(NotOp notOp, SymbolTable arg) {
     NodeType arg1 = notOp.getExpr().accept(this,arg);
+    notOp.setNodeType(typeTable.check("NOT",arg1));
     return typeTable.check("NOT",arg1);
   }
 
@@ -371,31 +390,37 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(OrOp orOp, SymbolTable arg) {
     NodeType arg1 = orOp.getLeftValue().accept(this,arg);
     NodeType arg2 = orOp.getRightValue().accept(this,arg);
+    orOp.setNodeType(typeTable.check("OR",arg1,arg2));
     return typeTable.check("OR",arg1,arg2);
   }
 
   @Override
   public NodeType visit(TrueConst trueConst, SymbolTable arg) {
+    trueConst.setNodeType(new PrimitiveNodeType("bool"));
     return new PrimitiveNodeType("bool");
   }
 
   @Override
   public NodeType visit(FalseConst falseConst, SymbolTable arg) {
+    falseConst.setNodeType(new PrimitiveNodeType("bool"));
     return new PrimitiveNodeType("bool");
   }
 
   @Override
   public NodeType visit(IntegerConst integerConst, SymbolTable arg) {
+    integerConst.setNodeType(new PrimitiveNodeType("integer"));
     return new PrimitiveNodeType("integer");
   }
 
   @Override
   public NodeType visit(RealConst realConst, SymbolTable arg) {
+    realConst.setNodeType(new PrimitiveNodeType("real"));
     return new PrimitiveNodeType("real");
   }
 
   @Override
   public NodeType visit(StringConst stringConst, SymbolTable arg) {
+    stringConst.setNodeType(new PrimitiveNodeType("string"));
     return new PrimitiveNodeType("string");
   }
 
@@ -403,6 +428,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(AddOp addOp, SymbolTable arg) {
     NodeType arg1 = addOp.getLeftValue().accept(this,arg);
     NodeType arg2 = addOp.getRightValue().accept(this,arg);
+    addOp.setNodeType(typeTable.check("ARITH",arg1,arg2));
     return typeTable.check("ARITH",arg1,arg2);
   }
 
@@ -410,6 +436,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(DiffOp diffOp, SymbolTable arg) {
     NodeType arg1 = diffOp.getLeftValue().accept(this,arg);
     NodeType arg2 = diffOp.getRightValue().accept(this,arg);
+    diffOp.setNodeType(typeTable.check("ARITH",arg1,arg2));
     return typeTable.check("ARITH",arg1,arg2);
   }
 
@@ -417,6 +444,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(DivIntOp divIntOp, SymbolTable arg) {
     NodeType arg1 = divIntOp.getLeftValue().accept(this,arg);
     NodeType arg2 = divIntOp.getRightValue().accept(this,arg);
+    divIntOp.setNodeType(typeTable.check("DIVINT",arg1,arg2));
     return typeTable.check("DIVINT",arg1,arg2);
   }
 
@@ -424,6 +452,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(DivOp divOp, SymbolTable arg) {
     NodeType arg1 = divOp.getLeftValue().accept(this,arg);
     NodeType arg2 = divOp.getRightValue().accept(this,arg);
+    divOp.setNodeType(typeTable.check("ARITH",arg1,arg2));
     return typeTable.check("ARITH",arg1,arg2);
   }
 
@@ -431,6 +460,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(MulOp mulOp, SymbolTable arg) {
     NodeType arg1 = mulOp.getLeftValue().accept(this,arg);
     NodeType arg2 = mulOp.getRightValue().accept(this,arg);
+    mulOp.setNodeType(typeTable.check("ARITH",arg1,arg2));
     return typeTable.check("ARITH",arg1,arg2);
   }
 
@@ -438,6 +468,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(PowOp powOp, SymbolTable arg) {
     NodeType arg1 = powOp.getLeftValue().accept(this,arg);
     NodeType arg2 = powOp.getRightValue().accept(this,arg);
+    powOp.setNodeType(typeTable.check("ARITH",arg1,arg2));
     return typeTable.check("ARITH",arg1,arg2);
   }
 }

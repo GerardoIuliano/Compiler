@@ -63,10 +63,11 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(AssignOp assignOp, SymbolTable arg) {
-    String lexema = assignOp.getId().getValue();
-    Optional<SymbolTableRecord> tableRecord = arg.lookup(lexema);
-    if(tableRecord.isEmpty()){
-      new ErrorHandler("Variabile "+assignOp.getId().getValue()+" non dichiarata ");
+    boolean idSafe = assignOp.getId().accept(this, arg);
+    boolean exprSafe = assignOp.getExpr().accept(this, arg);
+    boolean assignSafe = exprSafe && idSafe;
+    if(!assignSafe){
+      new ErrorHandler("Variabile "+assignOp.getId().getValue()+" non dichiarata");
       return false;
     }else return true;
   }

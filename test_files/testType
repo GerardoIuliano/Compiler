@@ -1,18 +1,13 @@
-real effe;
+integer glob := 2;
 
-fun somma(integer a, out real b, out string c, out integer d):integer
-    real bibi;
-    string scritta;
-    return 2;
-end fun;
-
-fun prova()
-    ?: "ciao";
+fun somma(integer a, integer b, out integer c):integer
+    integer res := a + b;
+    c := res/2;
+    return res;
 end fun;
 
 main
-    integer f, g;
-    string aaa;
-    real bbb;
-    integer due := somma(f, @bbb, @aaa, @g);
+    integer a;
+    somma(1,2,@a);
+    ? a;
 end main;

@@ -38,6 +38,7 @@ public class GenerateCodeCTest {
             //TYPE CHECK
             NodeType typeCheck = program.accept(typeCheckerVisitor, symbolTable);
             System.out.println("TypeCheck: "+typeCheck.toString());
+            symbolTable.resetLevel();
             //GENERATE C CODE
             CTemplate cTemplate = new CTemplate();
             File cfile = cTemplate.create("main").get();

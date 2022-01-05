@@ -101,7 +101,7 @@ VarDecl ::= Type:t IdListInit:ili SEMI
 Type ::= INTEGER:i
         {: RESULT = new PrimitiveType(ileft, iright, "integer"); :}
         | BOOL:b
-        {: RESULT = new PrimitiveType(bleft, bright, "boolean"); :}
+        {: RESULT = new PrimitiveType(bleft, bright, "bool"); :}
         | REAL:r
         {: RESULT = new PrimitiveType(rleft, rright, "real"); :}
         | STRING:s
@@ -221,13 +221,13 @@ IdList ::= ID:id
 ;
 
 WriteStat ::=  WRITE:w  Expr:e
-    {: RESULT = new WriteOp(wleft, wright, e); :}
+    {: RESULT = new WriteOp(wleft, wright, e,"write"); :}
 	| WRITELN:wln  Expr:e
-	{: RESULT = new WriteOp(wlnleft, wlnright, e); :}
+	{: RESULT = new WriteOp(wlnleft, wlnright, e, "writeln"); :}
 	| WRITET:wt  Expr:e
-	{: RESULT = new WriteOp(wtleft, wtright, e); :}
+	{: RESULT = new WriteOp(wtleft, wtright, e, "writet"); :}
 	| WRITEB:wb  Expr:e
-	{: RESULT = new WriteOp(wbleft, wbright, e); :}
+	{: RESULT = new WriteOp(wbleft, wbright, e, "writeb"); :}
 ;
 
 AssignStat ::=  ID:id ASSIGN Expr:e
