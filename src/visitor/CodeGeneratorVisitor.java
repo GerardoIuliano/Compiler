@@ -3,6 +3,7 @@ package visitor;
 import nodekind.NodeKind;
 import nodetype.NodeType;
 import nodetype.PrimitiveNodeType;
+import org.w3c.dom.Node;
 import semantic.SymbolTable;
 import syntax.*;
 import syntax.expr.*;
@@ -113,8 +114,16 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(VarDeclOp varDeclOp, SymbolTable arg) {
     //Collections.reverse(varDeclOp.getIdInitList());
     String type = varDeclOp.getPrimitiveType().accept(this, arg);
+    if(type.equals("var"))
+      type = checkVarType(varDeclOp.getIdInitList().get(0).getId().getNodeType());
     String ids = beautify(varDeclOp.getIdInitList(), new StringJoiner(","), arg);
     return String.format("%s %s;", type, ids);
+  }
+
+  //controlla il tipo dell'inferenza
+  String checkVarType(NodeType nodeType) {
+    PrimitiveNodeType nt = (PrimitiveNodeType) nodeType;
+    return nt.getNodoType();
   }
 
   @Override
