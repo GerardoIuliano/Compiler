@@ -123,7 +123,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   //controlla il tipo dell'inferenza
   String checkVarType(NodeType nodeType) {
     PrimitiveNodeType nt = (PrimitiveNodeType) nodeType;
-    return nt.getNodoType();
+    return chooseType(nt.getNodoType());
   }
 
   @Override
