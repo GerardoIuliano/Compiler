@@ -60,6 +60,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(Program program, SymbolTable arg) {
+
     arg.enterScope();
     NodeType varType = checkContext(program.getVarDeclOpList(), arg);
     NodeType funType = checkContext(program.getFunOpList(), arg);
@@ -87,6 +88,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(BodyOp bodyOp, SymbolTable arg) {
+
     arg.enterScope();
     NodeType varType = checkContext(bodyOp.getVarDeclList(), arg);
     NodeType statType = checkContext(bodyOp.getStatList(), arg);
@@ -101,6 +103,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(FunOp funOp, SymbolTable arg) {
+
     arg.enterScope();
 
     NodeType varList = checkContext(funOp.getBodyOp().getVarDeclList(), arg);

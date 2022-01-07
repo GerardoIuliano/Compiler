@@ -10,7 +10,7 @@ import visitor.CodeGeneratorVisitor;
 import visitor.ConcreteVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
-
+import java.lang.String;
 import java.io.File;
 
 public class GenerateCodeCTest {

@@ -1,6 +1,7 @@
 package visitor;
 
 import nodekind.NodeKind;
+import nodetype.FunctionNodeType;
 import nodetype.NodeType;
 import nodetype.PrimitiveNodeType;
 import semantic.SymbolTable;
@@ -34,8 +35,6 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Program program, SymbolTable arg) {
-    Collections.reverse(program.getFunOpList());
-    Collections.reverse(program.getVarDeclOpList());
     String vars = "", funs = "";
     arg.enterScope();
     if(program.getVarDeclOpList() != null)
@@ -52,13 +51,13 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(AssignOp assignOp, SymbolTable arg) {
     String left = assignOp.getId().accept(this, arg);
     String right = assignOp.getExpr().accept(this, arg);
+    if(assignOp.getExpr() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s = %s;", left, right);
   }
 
   @Override
   public String visit(BodyOp bodyOp, SymbolTable arg) {
-    Collections.reverse(bodyOp.getStatList());
-    Collections.reverse(bodyOp.getVarDeclList());
     String vars = "", stats = "";
     arg.enterScope();
     if(bodyOp.getVarDeclList() != null)
@@ -66,14 +65,11 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     if(bodyOp.getStatList() != null)
       stats = beautify(bodyOp.getStatList(), new StringJoiner("\n"), arg);
     arg.exitScope();
-    return String.format("%s\n\n%s\n", vars, stats);
+    return String.format("%s\n%s\n", vars, stats);
   }
 
   @Override
   public String visit(FunOp funOp, SymbolTable arg) {
-    //Collections.reverse(funOp.getParDeclOp());
-    Collections.reverse(funOp.getBodyOp().getVarDeclList());
-    Collections.reverse(funOp.getBodyOp().getStatList());
     String params = "";
     String fname = funOp.getId().accept(this, arg);
     arg.enterScope();
@@ -95,11 +91,14 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   @Override
   public String visit(IdInitOp idInitOp, SymbolTable arg) {
     String id = idInitOp.getId().accept(this, arg);
+    String tipo = chooseType(arg.lookup(idInitOp.getId().getValue()).get().getNodeType().toString());
     if(idInitOp.getExpr() != null) {
       String expr = idInitOp.getExpr().accept(this, arg);
-      return String.format("%s = %s", id, expr);
+      if(idInitOp.getExpr() instanceof CallFunOp)
+        expr = expr.substring(0, expr.length()-1);
+      return String.format("%s %s = %s;\n",tipo, id, expr);
     }
-    return String.format("%s", id);
+    return String.format("%s %s;\n",tipo, id);
   }
 
   @Override
@@ -111,10 +110,10 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(VarDeclOp varDeclOp, SymbolTable arg) {
-    //Collections.reverse(varDeclOp.getIdInitList());
     String type = varDeclOp.getPrimitiveType().accept(this, arg);
-    String ids = beautify(varDeclOp.getIdInitList(), new StringJoiner(","), arg);
-    return String.format("%s %s;", type, ids);
+    String ids = beautify(varDeclOp.getIdInitList(), new StringJoiner("\n"), arg);
+    //costruire la dichiarazione usando idInitOp in modo da risolvere l'inferenza di tipo.
+    return String.format("%s", ids);
   }
 
   @Override
@@ -153,19 +152,24 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
     StringJoiner scanfs = new StringJoiner("\n");
 
-    String finalExpr = expr;
+
     readOp.getIds().forEach(var -> {
       String type = this.formatType(arg.lookup(var.getValue()).get().getNodeType());
-      scanfs.add(String.format("scanf(\"%s%s\", &%s);", finalExpr, type, var.getValue()));
+      scanfs.add(String.format("scanf(\"%s\", &%s);", type, var.getValue()));
     });
-    return scanfs.toString();
+    if(expr.equals(""))
+      return scanfs.toString();
+    else {
+      String printf = String.format("printf(%s);\n", expr);
+      return printf + scanfs.toString();
+    }
   }
 
   private String formatType(NodeType type){
     PrimitiveNodeType pType = PrimitiveNodeType.class.cast(type);
     switch(pType.getNodoType()){
       case "real":
-        return "%f";
+        return "%lf";
       case "string":
         return "%s";
       default:
@@ -194,10 +198,10 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Id id, SymbolTable arg) {
-    if(!arg.lookup(id.getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT))
-      return id.getValue();
-    else
+    if(arg.lookup(id.getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT))
       return "*"+id.getValue();
+    else
+      return id.getValue();
   }
 
   @Override
@@ -256,9 +260,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(EQOp eqOp, SymbolTable arg) {
-    String left = eqOp.getLeftValue().accept(this, arg);
-    String right = eqOp.getRightValue().accept(this, arg);
-    return String.format("%s == %s", left, right);
+    return equalString(eqOp.getLeftValue(),eqOp.getRightValue(), arg, true);
   }
 
   @Override
@@ -290,9 +292,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(NEOp neOp, SymbolTable arg) {
-    String left = neOp.getLeftValue().accept(this, arg);
-    String right = neOp.getRightValue().accept(this, arg);
-    return String.format("%s != %s", left, right);
+    return equalString(neOp.getLeftValue(),neOp.getRightValue(), arg, false);
   }
 
   @Override
@@ -373,5 +373,55 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   @Override
   public String visit(StringConst stringConst, SymbolTable arg) {
     return "\""+stringConst.getValue()+"\"";
+  }
+
+  public String equalString(Expr exprLeft, Expr exprRight, SymbolTable arg, boolean equal){
+    Id id;
+    CallFunOp call;
+    String left = exprLeft.accept(this, arg), right = exprRight.accept(this, arg);
+    boolean leftOk = false;
+    boolean rightOk = false;
+    if(exprLeft instanceof Id){
+      id =(Id)exprLeft;
+      if(arg.lookup(id.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string"))){
+        left = "&"+left;
+        leftOk = true;
+      }
+    }
+    if(exprRight instanceof Id){
+      id =(Id)exprRight;
+      if(arg.lookup(id.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string"))){
+        right = "&"+right;
+        rightOk = true;
+      }
+    }
+    if(exprLeft instanceof StringConst){
+      leftOk = true;
+    }
+    if(exprRight instanceof StringConst){
+      rightOk = true;
+    }
+    if(exprLeft instanceof CallFunOp){
+      call =(CallFunOp) exprLeft;
+      id=call.getId();
+      if(((FunctionNodeType) arg.lookup(id.getValue()).get().getNodeType()).getNodeType().equals(new PrimitiveNodeType("string")))
+        leftOk = true;
+    }
+    if(exprRight instanceof CallFunOp){
+      call =(CallFunOp) exprRight;
+      id=call.getId();
+      if(((FunctionNodeType) arg.lookup(id.getValue()).get().getNodeType()).getNodeType().equals(new PrimitiveNodeType("string")))
+        rightOk = true;
+    }
+    if(leftOk && rightOk){
+      if(equal)
+        return String.format("strcmp(%s,%s) == 0", left, right);
+      else
+        return String.format("strcmp(%s,%s) != 0", left, right);
+    }
+    if(equal)
+      return String.format("%s == %s", left, right);
+    else
+      return String.format("%s != %s", left, right);
   }
 }

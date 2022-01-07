@@ -15,10 +15,7 @@ import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
@@ -49,13 +46,15 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(Program program, SymbolTable arg) {
+    Collections.reverse(program.getFunOpList());
+    Collections.reverse(program.getVarDeclOpList());
     arg.enterScope();
-    boolean isFunctionSafe = checkContext(program.getFunOpList(), arg);
     boolean isVariableSafe = checkContext(program.getVarDeclOpList(), arg);
+    boolean isFunctionSafe = checkContext(program.getFunOpList(), arg);
     boolean isBodySafe = program.getBodyOp().accept(this,arg);
     boolean isProgramSafe = isFunctionSafe && isVariableSafe && isBodySafe;
     if(!isProgramSafe){
-      ErrorHandler errorHandler = new ErrorHandler("Errore di compilazione");
+      new ErrorHandler("Errore di compilazione");
     }
     arg.exitScope();
     return isProgramSafe;
@@ -67,13 +66,15 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
     boolean exprSafe = assignOp.getExpr().accept(this, arg);
     boolean assignSafe = exprSafe && idSafe;
     if(!assignSafe){
-      new ErrorHandler("Variabile "+assignOp.getId().getValue()+" non dichiarata");
+      new ErrorHandler("Variabilee "+assignOp.getId().getValue()+" non dichiarata");
       return false;
     }else return true;
   }
 
   @Override
   public Boolean visit(BodyOp bodyOp, SymbolTable arg) {
+      Collections.reverse(bodyOp.getStatList());
+      Collections.reverse(bodyOp.getVarDeclList());
       arg.enterScope();
       Boolean varDeclSafe = checkContext(bodyOp.getVarDeclList(), arg);
       Boolean statListSafe = checkContext(bodyOp.getStatList(), arg);
@@ -88,6 +89,8 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
 
   @Override
   public Boolean visit(FunOp funOp, SymbolTable arg) {
+    Collections.reverse(funOp.getBodyOp().getVarDeclList());
+    Collections.reverse(funOp.getBodyOp().getStatList());
     boolean funNameSafe = saveFunName(funOp, arg);
 
     arg.enterScope();

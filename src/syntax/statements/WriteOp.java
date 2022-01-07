@@ -32,29 +32,29 @@ public class WriteOp extends AbstractNode implements Statement {
         String classe = e.getClass().toString();
         NodeType type;
         switch (classe){
-            case "class syntax.CallFunOp"                   : {type = ((CallFunOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr.substring(0,expr.length()-1)+");"; }
-            case "class syntax.expr.Id"                     : {type = ((Id)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.MinusOp"                : {type = ((MinusOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.constant.StringConst"   : {type = ((StringConst)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.constant.IntegerConst"  : {type = ((IntegerConst)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.constant.RealConst"     : {type = ((RealConst)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.constant.TrueConst"     : {type = ((TrueConst)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.constant.FalseConst"    : {type = ((FalseConst)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.AddOp"          : {type = ((AddOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.DiffOp"         : {type = ((DiffOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.DivIntOp"       : {type = ((DivIntOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.DivOp"          : {type = ((DivOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.MulOp"          : {type = ((MulOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.arithop.PowOp"          : {type = ((PowOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.AndOp"            : {type = ((AndOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.EQOp"             : {type = ((EQOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.GEOp"             : {type = ((GEOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.GtOp"             : {type = ((GTOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.LEOp"             : {type = ((LEOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.LTOp"             : {type = ((LTOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.NEOp"             : {type = ((NEOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.NotOp"            : {type = ((NotOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
-            case "class syntax.expr.relop.OrOp"             : {type = ((OrOp)e).getNodeType(); return "printf(\""+getFormat(type)+"\","+expr+");"; }
+            case "class syntax.CallFunOp"                   : {type = ((CallFunOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr.substring(0,expr.length()-1)+");"; }
+            case "class syntax.expr.Id"                     : {type = ((Id)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.MinusOp"                : {type = ((MinusOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.constant.StringConst"   : {type = ((StringConst)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.constant.IntegerConst"  : {type = ((IntegerConst)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.constant.RealConst"     : {type = ((RealConst)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.constant.TrueConst"     : {type = ((TrueConst)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.constant.FalseConst"    : {type = ((FalseConst)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.AddOp"          : {type = ((AddOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.DiffOp"         : {type = ((DiffOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.DivIntOp"       : {type = ((DivIntOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.DivOp"          : {type = ((DivOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.MulOp"          : {type = ((MulOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.arithop.PowOp"          : {type = ((PowOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.AndOp"            : {type = ((AndOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.EQOp"             : {type = ((EQOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.GEOp"             : {type = ((GEOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.GtOp"             : {type = ((GTOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.LEOp"             : {type = ((LEOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.LTOp"             : {type = ((LTOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.NEOp"             : {type = ((NEOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.NotOp"            : {type = ((NotOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.relop.OrOp"             : {type = ((OrOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
             default         : return "error write";
         }
     }
@@ -72,6 +72,16 @@ public class WriteOp extends AbstractNode implements Statement {
             case "bool"     : return "%i";
             case "string"   : return "%s";
             default         : return "%s";
+        }
+    }
+
+    public String getLineTerminator(){
+        switch (write){
+            case "write"    : return "";
+            case "writeln"  : return "\\n";
+            case "writet"   : return "\\t";
+            case "writeb"   : return " ";
+            default: return "";
         }
     }
 }
