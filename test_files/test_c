@@ -20,7 +20,7 @@ fun sommac(integer a, real b, out string size): real
 		var valore := "grande";
  		size := valore;
 	else
-		var valore := 'piccola';
+		var valore := 'piccolo';
  		size := valore;
 	end if;
 

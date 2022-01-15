@@ -198,9 +198,6 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Id id, SymbolTable arg) {
-    if(arg.lookup(id.getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT))
-      return "*"+id.getValue();
-    else
       return id.getValue();
   }
 
