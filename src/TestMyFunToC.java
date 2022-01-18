@@ -7,10 +7,12 @@ import template.CTemplate;
 import visitor.CodeGeneratorVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 
-public class MyFun2C {
+import java.io.*;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+
+public class TestMyFunToC {
 
     static Lexer lexer;
     static Parser parser;
@@ -47,82 +49,49 @@ public class MyFun2C {
             cTemplate.write(cfile, root);
 
             //EXEC C SOURCE FILE
-            compileCprog(cfile.getName());
+            compileCprog("c_files/main.c");
         } else {
             System.out.println("File not found!");
         }
     }
 
     //compila ed esegue un file C
-    public static void compileCprog(String fileName){
+    public static void compileCprog(String finalFileName) throws IOException, InterruptedException {
+
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+        ProcessBuilder builder = new ProcessBuilder();
+        String workingDir = System.getProperty("user.dir");
 
-        /*
-        try {
-            Runtime.getRuntime().exec("cmd.exe /C start");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-        ProcessBuilder builder = new ProcessBuilder("gcc", "-o", "main", "main.c");
-        try {
-            builder.start().waitFor();
-            ProcessBuilder run = new ProcessBuilder("./" + "main" );
-            Process process = run.start();
-            StreamReader streamReader = new StreamReader(process.getInputStream());
-            new Thread(streamReader).start();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        /**
         if (isWindows) {
             //builder.command("cmd.exe", "/c", "wsl", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("cmd.exe", "/c", "wsl", "./launch.sh", "c_files\\" + fileName.replace("\\", "/"));
+            builder.command("cmd.exe", "/c", "wsl", "./launch.sh", finalFileName);
         } else {
             //builder.command("sh", "-c", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("sh", "-c", "./launch.sh", fileName.replace("\\", "/"));
+            builder.command("sh", "-c", "./launch.sh", finalFileName);
         }
 
-        System.out.println("Command: " + builder.command());
-        //builder.directory(new File(workingDir));
-
-        try {
-         Process process = builder.start();
-         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-         String readline = "";
-         int i = 0;
-
-         while ((readline = reader.readLine()) != null) {
-            System.out.println(++i + " " + readline);
-         }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
+        builder.directory(new File(workingDir));
+        Process process = builder.start();
+        StreamReader streamGobbler = new StreamReader(process.getInputStream(), System.out::println);
+        Executors.newSingleThreadExecutor().submit(streamGobbler);
+        int exitCode = process.waitFor();
+        assert exitCode == 0;
+        System.exit(0);
     }
 
     static class StreamReader implements Runnable {
         private InputStream reader;
+        private Consumer<String> consumer;
 
-        public StreamReader(InputStream inStream) {
-            reader = inStream;
+        public StreamReader(InputStream inStream, Consumer<String> consumer) {
+            this.reader = inStream;
+            this.consumer =consumer;
         }
 
         @Override
         public void run() {
-            byte[] buf = new byte[1024];
-            int size = 0;
-            try {
-                while ((size = reader.read(buf)) != -1) {
-                    System.out.println(new String(buf));
-                }
-                reader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            new BufferedReader(new InputStreamReader(reader)).lines()
+                    .forEach(consumer);
         }
     }
 }
