@@ -1,13 +1,10 @@
 import lexical.ArrayStringTable;
 import lexical.StringTable;
 import nodetype.NodeType;
-import org.w3c.dom.Document;
 import semantic.StackSymbolTable;
 import syntax.Program;
-import syntax.template.XMLTemplate;
 import template.CTemplate;
 import visitor.CodeGeneratorVisitor;
-import visitor.ConcreteVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 import java.lang.String;
