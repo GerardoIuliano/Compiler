@@ -105,6 +105,9 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(ParDeclOp parDeclOp, SymbolTable arg) {
     String type = parDeclOp.getType().accept(this, arg);
     String id = parDeclOp.getId().accept(this, arg);
+    //se type è char* e la variabile è OUT, char* -> char perchè il puntatore (*) è gestito da id. Per eliminare il caso char* *s
+    if(arg.lookup(parDeclOp.getId().getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT) && type.equals("char*"))
+      type=type.substring(0,type.length()-1);
     return String.format("%s %s", type, id);
   }
 
