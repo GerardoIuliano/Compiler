@@ -11,8 +11,6 @@ import syntax.expr.arithop.*;
 import syntax.expr.constant.*;
 import syntax.expr.relop.*;
 import syntax.statements.*;
-
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -44,7 +42,9 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
     String main = program.getBodyOp().accept(this, arg);
     arg.exitScope();
-    return String.format("#include<stdio.h>\n#include<stdlib.h>\n#include<math.h>\n#include<stdbool.h>\n#include<stdlib.h>\n#include<stddef.h>\n#include<string.h>\n\n" + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
+    return String.format("#include<stdio.h>\n#include<stdlib.h>\n#include<math.h>\n#include<stdbool.h>\n#include<stdlib.h>\n#include<stddef.h>\n#include<string.h>\n#define STRING 100\n" +
+        "char STRING_CAT[STRING];\n" +
+        "char BUFFER[STRING];\n" + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
   }
 
   @Override
@@ -53,6 +53,8 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     String right = assignOp.getExpr().accept(this, arg);
     if(assignOp.getExpr() instanceof CallFunOp)
       right = right.substring(0,right.length()-1);
+    if(assignOp.getId().getNodeType().equals(new PrimitiveNodeType("string")))
+      return String.format("strcpy(%s,%s);", left, right);
     return String.format("%s = %s;", left, right);
   }
 
@@ -92,6 +94,8 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(IdInitOp idInitOp, SymbolTable arg) {
     String id = idInitOp.getId().accept(this, arg);
     String tipo = chooseType(arg.lookup(idInitOp.getId().getValue()).get().getNodeType().toString());
+    if(idInitOp.getId().getNodeType().equals(new PrimitiveNodeType("string")))
+      id = id+"[STRING]";
     if(idInitOp.getExpr() != null) {
       String expr = idInitOp.getExpr().accept(this, arg);
       if(idInitOp.getExpr() instanceof CallFunOp)
@@ -105,9 +109,8 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(ParDeclOp parDeclOp, SymbolTable arg) {
     String type = parDeclOp.getType().accept(this, arg);
     String id = parDeclOp.getId().accept(this, arg);
-    //se type è char* e la variabile è OUT, char* -> char perchè il puntatore (*) è gestito da id. Per eliminare il caso char* *s
-    if(arg.lookup(parDeclOp.getId().getValue()).get().getKind().equals(NodeKind.VARIABLE_OUT) && type.equals("char*"))
-      type=type.substring(0,type.length()-1);
+    if(arg.lookup(parDeclOp.getId().getValue()).get().getNodeType().equals(new PrimitiveNodeType("string")))
+      id = id+"[]";
     return String.format("%s %s", type, id);
   }
 
@@ -155,10 +158,12 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
     StringJoiner scanfs = new StringJoiner("\n");
 
-
     readOp.getIds().forEach(var -> {
       String type = this.formatType(arg.lookup(var.getValue()).get().getNodeType());
-      scanfs.add(String.format("scanf(\"%s\", &%s);", type, var.getValue()));
+      if(arg.lookup(var.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string")))
+        scanfs.add(String.format("scanf(\"%s\", %s);", type, var.getValue()));
+      else
+        scanfs.add(String.format("scanf(\"%s\", &%s);", type, var.getValue()));
     });
     if(expr.equals(""))
       return scanfs.toString();
@@ -201,7 +206,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Id id, SymbolTable arg) {
-      return id.getValue();
+    return id.getValue();
   }
 
   @Override
@@ -234,7 +239,7 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     if(s.equals("real"))
       return "double";
     if(s.equals("string"))
-      return "char*";
+      return "char";
     return s;
   }
 
@@ -384,14 +389,12 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     if(exprLeft instanceof Id){
       id =(Id)exprLeft;
       if(arg.lookup(id.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string"))){
-        left = "&"+left;
         leftOk = true;
       }
     }
     if(exprRight instanceof Id){
       id =(Id)exprRight;
       if(arg.lookup(id.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string"))){
-        right = "&"+right;
         rightOk = true;
       }
     }

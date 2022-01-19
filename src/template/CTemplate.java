@@ -19,7 +19,7 @@ public class CTemplate implements Template<String>{
 
     @Override
     public Optional<File> create(String name) {
-        File file = new File("c_files\\" + name + ".c");
+        File file = new File("" + name + ".c");
         return Optional.ofNullable(file);
     }
 }

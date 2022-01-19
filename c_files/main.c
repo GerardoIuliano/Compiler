@@ -6,31 +6,21 @@
 #include<stddef.h>
 #include<string.h>
 
-int c = 1;
 
-int somma(int a,int b){
+int sommac(int a,int b){
 int result;
-result = a + b + c;
-if(result > 100){
-
-printf("%s\n","Valore grande");
-
-} else {
-
-printf("%s\n","Valore piccolo");
-
-}
+result = a + b;
 return result;
 }
 
 int main(int argc, char *argv[]){
-int a = 10;
+int a = 2;
 
-int b = 22;
+int b = 4;
 
-int risultato;
+int result = sommac(a, b);
 
-risultato = somma(a, b);
-printf("%d\n",risultato);
+scanf("%d", &b);
+printf("%d",result);
 
 }

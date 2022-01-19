@@ -9,6 +9,8 @@ import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -16,6 +18,7 @@ public class TestMyFunToC {
 
     static Lexer lexer;
     static Parser parser;
+    private static String workingDir = System.getProperty("user.dir");
 
     public static void main(String[] args) throws Exception {
         StringTable stringTable = new ArrayStringTable();
@@ -48,50 +51,52 @@ public class TestMyFunToC {
             String root = program.accept(codeGeneratorVisitor, symbolTable);
             cTemplate.write(cfile, root);
 
-            //EXEC C SOURCE FILE
-            compileCprog("c_files/main.c");
+            //COMPILE C SOURCE FILE
+            compileCprog();
+            //RUN FILE .exe
+            runCprog();
         } else {
             System.out.println("File not found!");
         }
     }
 
     //compila ed esegue un file C
-    public static void compileCprog(String finalFileName) throws IOException, InterruptedException {
-
-        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
+    public static void compileCprog() throws IOException, InterruptedException {
         ProcessBuilder builder = new ProcessBuilder();
-        String workingDir = System.getProperty("user.dir");
+        final List<String> commandsCompile = new ArrayList<>();
 
-        if (isWindows) {
-            //builder.command("cmd.exe", "/c", "wsl", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("cmd.exe", "/c", "wsl", "./launch.sh", finalFileName);
-        } else {
-            //builder.command("sh", "-c", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("sh", "-c", "./launch.sh", finalFileName);
-        }
+        commandsCompile.add("cmd.exe");
+        commandsCompile.add("/C");
+        commandsCompile.add("gcc main.c");
+
+        builder.command(commandsCompile);
 
         builder.directory(new File(workingDir));
         Process process = builder.start();
-        StreamReader streamGobbler = new StreamReader(process.getInputStream(), System.out::println);
+        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+        Executors.newSingleThreadExecutor().submit(streamGobbler);
+        process.waitFor();
+    }
+    public static void runCprog() throws IOException, InterruptedException {
+        /*
+        ProcessBuilder builder = new ProcessBuilder();
+        final List<String> commandsCompile = new ArrayList<>();
+
+        commandsCompile.add("cmd.exe");
+        commandsCompile.add("/C");
+        commandsCompile.add("a.exe");
+
+        builder.command(commandsCompile);
+
+        builder.directory(new File(workingDir));
+        Process process = builder.start();
+        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
         Executors.newSingleThreadExecutor().submit(streamGobbler);
         int exitCode = process.waitFor();
         assert exitCode == 0;
         System.exit(0);
+         */
+        Runtime.getRuntime().exec("cmd.exe /c start ");
     }
 
-    static class StreamReader implements Runnable {
-        private InputStream reader;
-        private Consumer<String> consumer;
-
-        public StreamReader(InputStream inStream, Consumer<String> consumer) {
-            this.reader = inStream;
-            this.consumer =consumer;
-        }
-
-        @Override
-        public void run() {
-            new BufferedReader(new InputStreamReader(reader)).lines()
-                    .forEach(consumer);
-        }
-    }
 }

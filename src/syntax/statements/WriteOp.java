@@ -8,6 +8,7 @@ import syntax.Expr;
 import syntax.Statement;
 import syntax.expr.Id;
 import syntax.expr.MinusOp;
+import syntax.expr.StrCatOp;
 import syntax.expr.arithop.*;
 import syntax.expr.constant.*;
 import syntax.expr.relop.*;
@@ -55,6 +56,7 @@ public class WriteOp extends AbstractNode implements Statement {
             case "class syntax.expr.relop.NEOp"             : {type = ((NEOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
             case "class syntax.expr.relop.NotOp"            : {type = ((NotOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
             case "class syntax.expr.relop.OrOp"             : {type = ((OrOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
+            case "class syntax.expr.StrCatOp"               : {type = ((StrCatOp)e).getNodeType(); return "printf(\""+getFormat(type)+getLineTerminator()+"\","+expr+");"; }
             default         : return "error write";
         }
     }

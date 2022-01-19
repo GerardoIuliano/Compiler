@@ -1,10 +1,13 @@
 import lexical.ArrayStringTable;
 import lexical.StringTable;
 import nodetype.NodeType;
+import org.w3c.dom.Document;
 import semantic.StackSymbolTable;
 import syntax.Program;
+import syntax.template.XMLTemplate;
 import template.CTemplate;
 import visitor.CodeGeneratorVisitor;
+import visitor.ConcreteVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 import java.lang.String;
@@ -24,6 +27,12 @@ public class GenerateCodeCTest {
             parser = new Parser(lexer);
 
             Program program = (Program) parser.parse().value;
+            //AST
+            XMLTemplate xmlTemplate = new XMLTemplate();
+            Document xmlDocument = xmlTemplate.create().get();
+            ConcreteVisitor xmlVisitor = new ConcreteVisitor();
+            program.accept(xmlVisitor, xmlDocument);
+            xmlTemplate.write("ast" + ".xml", xmlDocument);
             //VISITORS
             ScopeCheckerVisitor scopeCheckerVisitor = new ScopeCheckerVisitor();
             TypeCheckerVisitor typeCheckerVisitor = new TypeCheckerVisitor();

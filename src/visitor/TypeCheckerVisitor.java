@@ -150,6 +150,8 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(ParDeclOp parDeclOp, SymbolTable arg) {
+    System.out.println("Id"+parDeclOp.getId()+"Type"+arg.lookup(parDeclOp.getId().getValue()).get().getNodeType());
+    parDeclOp.getId().setNodeType(arg.lookup(parDeclOp.getId().getValue()).get().getNodeType());
     return new PrimitiveNodeType(parDeclOp.getType().getValue());
   }
 
@@ -317,6 +319,7 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
   public NodeType visit(StrCatOp strCatOp, SymbolTable arg) {
     NodeType arg1 = strCatOp.getLeftValue().accept(this,arg);
     NodeType arg2 = strCatOp.getRightValue().accept(this,arg);
+    strCatOp.setNodeType(typeTable.check("STRCAT",arg1,arg2));
     return typeTable.check("STRCAT",arg1,arg2);
   }
 

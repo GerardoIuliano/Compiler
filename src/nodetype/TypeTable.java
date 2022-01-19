@@ -34,8 +34,6 @@ public class TypeTable {
     this.typeTable.add(new TypeTableRecord("STRCAT",integer,string,string));
     this.typeTable.add(new TypeTableRecord("STRCAT",string,real,string));
     this.typeTable.add(new TypeTableRecord("STRCAT",real,string,string));
-    this.typeTable.add(new TypeTableRecord("STRCAT",string,bool,string));
-    this.typeTable.add(new TypeTableRecord("STRCAT",bool,string,string));
 
     /* REL_OP => EQ,LT,LE,GT,GE */
     this.typeTable.add(new TypeTableRecord("REL",integer,integer,bool));
