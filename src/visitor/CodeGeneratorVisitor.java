@@ -5,6 +5,7 @@ import nodetype.FunctionNodeType;
 import nodetype.NodeType;
 import nodetype.PrimitiveNodeType;
 import semantic.SymbolTable;
+import semantic.SymbolTableRecord;
 import syntax.*;
 import syntax.expr.*;
 import syntax.expr.arithop.*;
@@ -13,10 +14,11 @@ import syntax.expr.relop.*;
 import syntax.statements.*;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringJoiner;
 
 public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
-
+int i=0;
   //data una lista di nodi esegua la join dei valori
   private String beautify(List<? extends AbstractNode> nodes, StringJoiner joiner, SymbolTable table){
     nodes.forEach(node -> joiner.add(node.accept(this, table)));
@@ -43,8 +45,16 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
     String main = program.getBodyOp().accept(this, arg);
     arg.exitScope();
     return String.format("#include<stdio.h>\n#include<stdlib.h>\n#include<math.h>\n#include<stdbool.h>\n#include<stdlib.h>\n#include<stddef.h>\n#include<string.h>\n#define STRING 100\n" +
+        "char BUFFER[STRING];\n" +
         "char STRING_CAT[STRING];\n" +
-        "char BUFFER[STRING];\n" + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
+        "char STRING_CAT_1[STRING];\n"+
+        "char* concatena(char* dest, char* src){\n" +
+        "    strcat(strcat(STRING_CAT, dest),src);\n" +
+        "    strcpy(STRING_CAT_1,STRING_CAT);\n" +
+        "    strcpy(STRING_CAT,\"\");\n" +
+        "    return STRING_CAT_1;\n" +
+        "}"
+        + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
   }
 
   @Override
@@ -109,7 +119,8 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
   public String visit(ParDeclOp parDeclOp, SymbolTable arg) {
     String type = parDeclOp.getType().accept(this, arg);
     String id = parDeclOp.getId().accept(this, arg);
-    if(arg.lookup(parDeclOp.getId().getValue()).get().getNodeType().equals(new PrimitiveNodeType("string")))
+    SymbolTableRecord record = arg.lookup(parDeclOp.getId().getValue()).get();
+    if(record.getNodeType().equals(new PrimitiveNodeType("string")))
       id = id+"[]";
     return String.format("%s %s", type, id);
   }
@@ -206,11 +217,23 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(Id id, SymbolTable arg) {
+    SymbolTableRecord record = arg.lookup(id.getValue()).get();
+    if(record.getKind().equals(NodeKind.VARIABLE_OUT) && !record.getNodeType().equals(new PrimitiveNodeType("string")))
+      return "*"+id.getValue();
     return id.getValue();
   }
 
+  /**
+   * Se la variabile da passare per riferimento è di tipo string viene passata la variabile senza '&' perchè è già un puntatore in c
+   * Se la variabile da passare per riferimento è di tipo integer, real o boolean si aggiunge '&' per passare l'indirizzo della variabile
+   * @param id
+   * @param arg
+   * @return
+   */
   @Override
   public String visit(IdOutpar id, SymbolTable arg) {
+    if(arg.lookup(id.getValue()).get().getNodeType().equals(new PrimitiveNodeType("string")))
+      return id.getValue();
     return "&"+id.getValue();
   }
 
@@ -245,9 +268,33 @@ public class CodeGeneratorVisitor implements Visitor<String, SymbolTable>{
 
   @Override
   public String visit(StrCatOp strCatOp, SymbolTable arg) {
-    String left = strCatOp.getLeftValue().accept(this, arg);
-    String right = strCatOp.getRightValue().accept(this, arg);
-    return String.format("strcat(%s, %s)", left, right);
+    String left="", right="";
+    left = concatConversion(strCatOp.getLeftValue(),arg);
+    right = concatConversion(strCatOp.getRightValue(),arg);
+    return String.format("concatena(%s, %s)", left, right);
+  }
+
+  public String concatConversion(Expr expr, SymbolTable arg){
+    if(expr instanceof StringConst)
+      return expr.accept(this,arg);
+    if(expr instanceof Id){
+      Id id = (Id) expr;
+      if(id.getNodeType().equals(new PrimitiveNodeType("integer"))){
+        String str = expr.accept(this,arg);
+        return String.format("itoa(%s,BUFFER,10)",str);
+      }
+      if(id.getNodeType().equals(new PrimitiveNodeType("real"))){
+        String str = expr.accept(this,arg);
+        return String.format("gcvt(%s,10,BUFFER)",str);
+      }
+      if(id.getNodeType().equals(new PrimitiveNodeType("string"))){
+        return expr.accept(this, arg);
+      }
+    }
+    if(expr instanceof StrCatOp || expr instanceof CallFunOp)
+      return expr.accept(this,arg);
+
+    return "error";
   }
 
   @Override
