@@ -1,20 +1,22 @@
-var c := 1;
-
-fun somma(integer a, integer b): integer
-	integer result;
-	result  :=  a + b + c;
-	if result > 100 then
-		?. "Valore grande";
-	else
-		?. "Valore piccolo";
-	end if;
-	return result;
-end fun;
-
-
+# gli n numeri della successione di fibonacci
 main
-	integer a := 10, b := 22;
-	integer risultato;
-	risultato := somma(a, b);
-	?. risultato;
+	integer first := 0, second := 1, n, sum := 0;
+	integer i :=0;
+
+	?, "Inserire la taglia: ";
+	% n;
+	?, "Serie di Fibonacci: ";
+
+	while i < n loop
+	    if i <= 1 then
+	        sum := i;
+	    else
+	       sum := first + second;
+	       first := second;
+	       second := sum;
+	    end if;
+	    ?: sum;
+	    i := i + 1;
+	end loop;
+
 end main;

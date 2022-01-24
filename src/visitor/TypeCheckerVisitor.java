@@ -150,7 +150,6 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
   @Override
   public NodeType visit(ParDeclOp parDeclOp, SymbolTable arg) {
-    System.out.println("Id"+parDeclOp.getId()+"Type"+arg.lookup(parDeclOp.getId().getValue()).get().getNodeType());
     parDeclOp.getId().setNodeType(arg.lookup(parDeclOp.getId().getValue()).get().getNodeType());
     return new PrimitiveNodeType(parDeclOp.getType().getValue());
   }

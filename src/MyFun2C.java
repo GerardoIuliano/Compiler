@@ -8,12 +8,17 @@ import visitor.CodeGeneratorVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
 
 public class MyFun2C {
 
     static Lexer lexer;
     static Parser parser;
+    private static String workingDir = System.getProperty("user.dir");
 
     public static void main(String[] args) throws Exception {
         StringTable stringTable = new ArrayStringTable();
@@ -46,83 +51,45 @@ public class MyFun2C {
             String root = program.accept(codeGeneratorVisitor, symbolTable);
             cTemplate.write(cfile, root);
 
-            //EXEC C SOURCE FILE
-            compileCprog(cfile.getName());
+            //COMPILE C SOURCE FILE
+            compileCprog();
+            //RUN FILE .exe
+            runCprog();
         } else {
             System.out.println("File not found!");
         }
     }
 
     //compila ed esegue un file C
-    public static void compileCprog(String fileName){
-        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
-
-        /*
+    public static void compileCprog() throws IOException, InterruptedException {
         try {
-            Runtime.getRuntime().exec("cmd.exe /C start");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-        ProcessBuilder builder = new ProcessBuilder("gcc", "-o", "main", "main.c");
-        try {
-            builder.start().waitFor();
-            ProcessBuilder run = new ProcessBuilder("./" + "main" );
-            Process process = run.start();
-            StreamReader streamReader = new StreamReader(process.getInputStream());
-            new Thread(streamReader).start();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            boolean exist = Files.exists(Path.of("a.exe"));
+            if(exist)
+                Files.delete(Path.of("a.exe"));
+        } catch (Exception x) {
+            System.err.format(x.toString());
         }
 
-        /**
-        if (isWindows) {
-            //builder.command("cmd.exe", "/c", "wsl", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("cmd.exe", "/c", "wsl", "./launch.sh", "c_files\\" + fileName.replace("\\", "/"));
-        } else {
-            //builder.command("sh", "-c", "clang-format", "-style=google", finalFileName.replace("\\", "/"), "-i");
-            builder.command("sh", "-c", "./launch.sh", fileName.replace("\\", "/"));
-        }
+        ProcessBuilder builder = new ProcessBuilder();
+        final List<String> commandsCompile = new ArrayList<>();
 
-        System.out.println("Command: " + builder.command());
-        //builder.directory(new File(workingDir));
+        commandsCompile.add("cmd.exe");
+        commandsCompile.add("/C");
+        commandsCompile.add("gcc main.c");
 
-        try {
-         Process process = builder.start();
-         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-         String readline = "";
-         int i = 0;
+        builder.command(commandsCompile);
 
-         while ((readline = reader.readLine()) != null) {
-            System.out.println(++i + " " + readline);
-         }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
+        builder.directory(new File(workingDir));
+        Process process = builder.start();
+        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+        Executors.newSingleThreadExecutor().submit(streamGobbler);
+        process.waitFor();
+    }
+    public static void runCprog() throws IOException, InterruptedException {
+        Process p = Runtime.getRuntime().exec("cmd.exe /c start ");
+        int exitCode = p.waitFor();
+        assert exitCode == 0;
+        System.exit(0);
     }
 
-    static class StreamReader implements Runnable {
-        private InputStream reader;
-
-        public StreamReader(InputStream inStream) {
-            reader = inStream;
-        }
-
-        @Override
-        public void run() {
-            byte[] buf = new byte[1024];
-            int size = 0;
-            try {
-                while ((size = reader.read(buf)) != -1) {
-                    System.out.println(new String(buf));
-                }
-                reader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

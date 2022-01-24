@@ -1,8 +1,13 @@
-## MyFun: Progetto del Corso di Compilatori anno 2021/2022
-### Iuliano Gerardo - Covino Francesco Pio
+# Quinta esercitazione:  Modulo Analisi semantica e generazione codice C
+Iuliano Gerardo - Covino Francesco Pio
+
 Linguaggio di programmazione definito per il corso di Compilatori anno 2021/2022.
 Il compilatore integra l'utilizzo di JFlex e JavaCup per l'implementazione del Lexer (per l'analisi lessicale)
 e del Parser (per l'analisi sintattica).
+
+La Classe MyFun2C mette insieme i linguaggi MyFun e C: si tratta di un compilatore completo che prende in input un codice MyFun, dopo aver svolto l'analisi
+lessicale, sintattica e semantica lo compila in un programma C. Completata la compilazione viene aperto un terminale da cui l'utente dovrà avviare l'applicazione
+digitando "a.exe" e premendo invio. Ciò consente di poter interagire dinamicamente con il programma.
 
 ## Specifiche lessicali
 
@@ -62,24 +67,7 @@ e del Parser (per l'analisi sintattica).
 
 ## Specifiche Sintattiche: Grammatiche
 
-### TERMINALI:
-MAIN, FUN, END, IF, THEN, ELSE, WHILE, LOOP, 
-READ, WRITE, WRITELN, WRITEB, WRITET, RETURN, ID,
-NULL, INTEGER, BOOL, REAL, STRING, VAR, OUT, OUTPAR,
-LPAR, RPAR, COMMA, SEMI, COLON, UMINUS,
-AND, OR, NOT, LT, LE, EQ, NE, GT, GE, ASSIGN, STR_CONCAT,
-PLUS, MINUS, TIMES, DIV, DIVINT, POW, INTEGER_CONST,
-REAL_CONST, STRING_CONST, TRUE, FALSE;
-
-### NON TERMINALI:
-Program, Expr, Stat, AssignStat, StatList,
-Main, VarDeclList, FunList, VarDecl, Type,
-IdListInit, IdListInitObbl, Const, Fun,
-ParamDeclList, NonEmptyParamDeclList, ParDecl,
-IfStat, Else, WhileStat, ReadStat, IdList,
-WriteStat, CallFun, ExprList;
-
-```java
+```
 
 Program ::= VarDeclList FunList Main:;
 
@@ -218,3 +206,5 @@ Program ::= VarDeclList FunList Main:;
         | LPAR Expr RPAR
         ;
 ```
+### Regole di inferenza
+Sono presenti nel file inference_rules.pdf nella repository.

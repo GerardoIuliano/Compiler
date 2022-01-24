@@ -41,18 +41,24 @@ fun divisione(integer a, integer b):integer
     return result;
 end fun;
 
-fun fibonacci(integer n) : integer
+fun fibonacci(integer n)
 
-    if n < 0 then
-        return -1;
-    end if;
-    if n = 0 then
-        return 0;
-    end if;
-    if n = 1 then
-        return 1;
-    end if;
-    return fibonacci(n-1) + fibonacci(n-2);
+   	integer first := 0, second := 1, sum := 0;
+   	integer i := 0;
+
+   	?, "Serie di Fibonacci: ";
+
+   	while i < n loop
+   	    if i <= 1 then
+   	        sum := i;
+   	    else
+   	       sum := first + second;
+   	       first := second;
+   	       second := sum;
+   	    end if;
+   	    ?: sum;
+   	    i := i + 1;
+   	end loop;
 
 end fun;
 
@@ -77,7 +83,7 @@ fun scegli_operazione(integer op, integer a, integer b):integer
     end if;
 
     if op = 5 then
-        result := fibonacci(a);
+        fibonacci(a);
     end if;
 
     return result;
@@ -91,15 +97,20 @@ main
     while risposta = "si" loop
         ?: "Scegli l'operazione aritmetica: 1.somma 2.moltiplicazione 3.divisione 4.elevamento a potenza 5.successione di Fibonacci";
         % op "operazione: ";
+
         if op = 5 then
-        % a "inserisci intero: ";
+            % a "inserisci intero: ";
         else
-        % a "inserisci primo intero: ";
-        % b "inserisci secondo intero: ";
+            % a "inserisci primo intero: ";
+            % b "inserisci secondo intero: ";
         end if;
+
         ris := scegli_operazione(op, a, b);
-        ? "Risultato: ";
-        ?:ris;
+
+        if op != 5 then
+            ? "Risultato: ";
+            ?: ris;
+        end if;
 
         % risposta 'vuoi continuare? (si/no):\t';
     end loop;
