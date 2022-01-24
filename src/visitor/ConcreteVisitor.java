@@ -41,7 +41,8 @@ public class ConcreteVisitor implements Visitor<Element, Document>{
         if(bodyOp.getVarDeclList() != null){
             bodyOp.getVarDeclList().forEach(addParent(element, arg));
         }
-        if( bodyOp.getStatList() != null){
+        //se l'elemento in posizione 0 è null significa che la lista è stata creata ma non contine nessuno statement
+        if( bodyOp.getStatList() != null && bodyOp.getStatList().get(0) != null){
             bodyOp.getStatList().forEach((Consumer<? super Statement>) addParent(element, arg));
         }
         return element;

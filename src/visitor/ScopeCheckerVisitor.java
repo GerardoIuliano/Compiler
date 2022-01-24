@@ -105,6 +105,8 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
   @Override
   public Boolean visit(IdInitOp idInitOp, SymbolTable arg) {
     boolean idSafe = idInitOp.getId().accept(this, arg);
+    if(idInitOp.getExpr() instanceof CallFunOp)
+      System.out.println("Call instance");
     boolean expSafe = idInitOp.getExpr().accept(this, arg);
     boolean isSafe = expSafe && idSafe;
     if(!isSafe)
@@ -130,6 +132,7 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
   public Boolean visit(VarDeclOp varDeclOp, SymbolTable arg) {
     String lexema;
     PrimitiveNodeType nodeType;
+    boolean exprSafe = true, idSafe = true;
 
     for(IdInitOp initOp : varDeclOp.getIdInitList()){
       lexema=initOp.getId().getValue();
@@ -142,10 +145,15 @@ public class ScopeCheckerVisitor implements Visitor<Boolean, SymbolTable> {
         arg.addEntry(lexema,new SymbolTableRecord(lexema,nodeType,NodeKind.VARIABLE));
       }else{
         new ErrorHandler("Errore dichiarazione multipla variabili");
-        return false;
+        idSafe=false;
+      }
+      if(initOp.getExpr() != null) {
+        if (!initOp.getExpr().accept(this, arg))
+          exprSafe = false;
       }
     }
-    return true;
+
+    return exprSafe && idSafe;
   }
 
   @Override

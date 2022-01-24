@@ -1,13 +1,21 @@
-integer glob := 2;
 
-fun somma(integer a, integer b, out integer c):integer
-    integer res := a + b;
-    c := res/2;
-    return res;
+fun ritornoReale(real r) : real
+    return r * 2;
+end fun;
+
+fun ritornoBool(bool b) : bool
+    return not b;
+end fun;
+
+fun ritornoStringa(string s) : string
+    return s & "Aggiunta";
+end fun;
+
+fun ritornoVoid()
 end fun;
 
 main
-    integer a;
-    somma(1,2,@a);
-    ? a;
+    bool boolean := ritornoBool(true);
+    string stringa := ritornoStringa("Stringa");
+    ? ritornoVoid();
 end main;

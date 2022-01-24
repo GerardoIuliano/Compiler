@@ -53,6 +53,18 @@ int i=0;
         "    strcpy(STRING_CAT_1,STRING_CAT);\n" +
         "    strcpy(STRING_CAT,\"\");\n" +
         "    return STRING_CAT_1;\n" +
+        "}\n"+
+        "char* convertInt(int intero){\n" +
+        "    char * num = malloc(sizeof(char)*STRING);\n" +
+        "    itoa(intero,BUFFER,10);\n" +
+        "    strcpy(num,BUFFER);\n" +
+        "    return num;\n" +
+        "}\n" +
+        "char* convertReal(double real){\n" +
+        "    char * num = malloc(sizeof(char)*STRING);\n" +
+        "    gcvt(real,10,BUFFER);\n" +
+        "    strcpy(num,BUFFER);\n" +
+        "    return num;\n" +
         "}"
         + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
   }
@@ -281,11 +293,11 @@ int i=0;
       Id id = (Id) expr;
       if(id.getNodeType().equals(new PrimitiveNodeType("integer"))){
         String str = expr.accept(this,arg);
-        return String.format("itoa(%s,BUFFER,10)",str);
+        return String.format("convertInt(%s)",str);
       }
       if(id.getNodeType().equals(new PrimitiveNodeType("real"))){
         String str = expr.accept(this,arg);
-        return String.format("gcvt(%s,10,BUFFER)",str);
+        return String.format("convertReal(%s)",str);
       }
       if(id.getNodeType().equals(new PrimitiveNodeType("string"))){
         return expr.accept(this, arg);
@@ -364,6 +376,10 @@ int i=0;
   public String visit(AddOp addOp, SymbolTable arg) {
     String left = addOp.getLeftValue().accept(this, arg);
     String right = addOp.getRightValue().accept(this, arg);
+    if(addOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(addOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s + %s", left, right);
   }
 
@@ -371,6 +387,10 @@ int i=0;
   public String visit(DiffOp diffOp, SymbolTable arg) {
     String left = diffOp.getLeftValue().accept(this, arg);
     String right = diffOp.getRightValue().accept(this, arg);
+    if(diffOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(diffOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s - %s", left, right);
   }
 
@@ -378,6 +398,10 @@ int i=0;
   public String visit(DivIntOp divIntOp, SymbolTable arg) {
     String left = divIntOp.getLeftValue().accept(this, arg);
     String right = divIntOp.getRightValue().accept(this, arg);
+    if(divIntOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(divIntOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s / %s", left, right);
   }
 
@@ -385,6 +409,10 @@ int i=0;
   public String visit(DivOp divOp, SymbolTable arg) {
     String left = divOp.getLeftValue().accept(this, arg);
     String right = divOp.getRightValue().accept(this, arg);
+    if(divOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(divOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s / %s", left, right);
   }
 
@@ -392,6 +420,10 @@ int i=0;
   public String visit(MulOp mulOp, SymbolTable arg) {
     String left = mulOp.getLeftValue().accept(this, arg);
     String right = mulOp.getRightValue().accept(this, arg);
+    if(mulOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(mulOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("%s * %s", left, right);
   }
 
@@ -399,6 +431,10 @@ int i=0;
   public String visit(PowOp powOp, SymbolTable arg) {
     String left = powOp.getLeftValue().accept(this, arg);
     String right = powOp.getRightValue().accept(this, arg);
+    if(powOp.getLeftValue() instanceof CallFunOp)
+      left = left.substring(0,left.length()-1);
+    if(powOp.getRightValue() instanceof CallFunOp)
+      right = right.substring(0,right.length()-1);
     return String.format("pow(%s, %s)", left, right);
   }
 

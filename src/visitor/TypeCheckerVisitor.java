@@ -166,50 +166,50 @@ public class TypeCheckerVisitor implements Visitor<NodeType, SymbolTable> {
 
     //dal record della symbol table si estrae tipo di ritorno e tipi dei parametri
     FunctionNodeType funType = (FunctionNodeType) record.getNodeType();
-    PrimitiveNodeType returnType = (PrimitiveNodeType) funType.getNodeType(); //tipo di ritorno
 
-    CompositeNodeType paramsType = funType.getParamsType(); // tipi funzione
-    List<NodeType> params = paramsType.getTypes(); //tipi
-    List<String> kinds = paramsType.getKinds(); //kind della symbol table
+    PrimitiveNodeType returnType = (PrimitiveNodeType) funType.getNodeType(); //tipo di ritorno della funzione
+    CompositeNodeType paramsType = funType.getParamsType(); // tipi dei parametri della funzione
+
+    List<NodeType> params = paramsType.getTypes(); //tipi della symbol table
+    List<String> kinds = paramsType.getKinds(); //kind della symbol table (IN / OUT)
 
     //parametri chiamata a funzione
     List<Expr> funParams = callFunOp.getParams();
-    Collections.reverse(funParams);
-
-    //per ogni espressione demando l'accept e costruisco una lista di nodetype
-    List<NodeType> params2 = new LinkedList<>();
-
-    //scorro i parametri
-    int j = 0;
-    for(Expr e: funParams) {
-
-      if(checkConstants(e)) { //expr costante
-        if(kinds.get(j).equals("OUT"))
-          new ErrorHandler("OUT param non può essere una costante");
-      } else { //expr variabile
-        if(kinds.get(j).equals("OUT") && !(e instanceof IdOutpar))
-          new ErrorHandler("OUT param atteso non risultante");
+    if(funParams != null) {
+      Collections.reverse(funParams);
+      //per ogni espressione demando l'accept e costruisco una lista di nodetype
+      List<NodeType> params2 = new LinkedList<>();
+      //scorro i parametri
+      int j = 0;
+      for (Expr e : funParams) {
+        if (checkConstants(e)) { //parametro di tipo OUT costante non può essere utilizzato
+          if (kinds.get(j).equals("OUT"))
+            new ErrorHandler("OUT param non può essere una costante");
+        } else { //expr variabile
+          if (kinds.get(j).equals("OUT") && !(e instanceof IdOutpar))
+            new ErrorHandler("OUT param atteso non risultante");
+        }
+        j++;
+        params2.add(e.accept(this, arg));
       }
-      j++;
-      params2.add(e.accept(this, arg));
-    }
-
-    //controllo se il numero di parametri è rispettato
-    if(params.size() != params2.size()) {
-      new ErrorHandler("Errore CallFunOp: numero argomenti funzione non corrispondente");
-    } else { //controlla i tipi di ogni parametro
-      for(int i = 0; i< params.size(); i++){
-        PrimitiveNodeType first = (PrimitiveNodeType) params.get(i);
-        PrimitiveNodeType second = (PrimitiveNodeType) params2.get(i);
-        //controlla il matching
-        if(!first.equals(second))
-          new ErrorHandler("Error CallFunOp type mismatch argomenti");
+      //controllo se il numero di parametri è rispettato
+      if (params.size() != params2.size()) {
+        new ErrorHandler("Errore CallFunOp: numero argomenti funzione non corrispondente");
+      } else { //controlla i tipi di ogni parametro
+        for (int i = 0; i < params.size(); i++) {
+          PrimitiveNodeType first = (PrimitiveNodeType) params.get(i);
+          PrimitiveNodeType second = (PrimitiveNodeType) params2.get(i);
+          //controlla il matching
+          if (!first.equals(second))
+            new ErrorHandler("Error CallFunOp type mismatch argomenti");
+        }
+        //match corretti
+        callFunOp.setNodeType(returnType);
+        return returnType;
       }
-      //match corretti
-      callFunOp.setNodeType(returnType);
-      return returnType;
     }
-    return new PrimitiveNodeType("error");
+    callFunOp.setNodeType(returnType);
+    return returnType;
   }
 
 

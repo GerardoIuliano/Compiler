@@ -9,6 +9,8 @@ import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -62,6 +64,12 @@ public class TestMyFunToC {
 
     //compila ed esegue un file C
     public static void compileCprog() throws IOException, InterruptedException {
+        try {
+            Files.delete(Path.of("a.exe"));
+        } catch (Exception x) {
+            System.err.format(x.toString());
+        }
+
         ProcessBuilder builder = new ProcessBuilder();
         final List<String> commandsCompile = new ArrayList<>();
 
@@ -78,25 +86,10 @@ public class TestMyFunToC {
         process.waitFor();
     }
     public static void runCprog() throws IOException, InterruptedException {
-        /*
-        ProcessBuilder builder = new ProcessBuilder();
-        final List<String> commandsCompile = new ArrayList<>();
-
-        commandsCompile.add("cmd.exe");
-        commandsCompile.add("/C");
-        commandsCompile.add("a.exe");
-
-        builder.command(commandsCompile);
-
-        builder.directory(new File(workingDir));
-        Process process = builder.start();
-        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
-        Executors.newSingleThreadExecutor().submit(streamGobbler);
-        int exitCode = process.waitFor();
+        Process p = Runtime.getRuntime().exec("cmd.exe /c start ");
+        int exitCode = p.waitFor();
         assert exitCode == 0;
         System.exit(0);
-         */
-        Runtime.getRuntime().exec("cmd.exe /c start ");
     }
 
 }

@@ -6,26 +6,6 @@ Programma MyFun in cui
 4- All'input 'no' oppure 'si' il programma conclude oppure mostra il menu iniziale, rispettivamente.
 #
 
-fun scegli_operazione(integer op, integer a, integer b):integer
-
-    if op = 1 then
-    	return somma(a, b);
-    end if;
-
-    if op = 2 then
-        return prodotto(a, b);
-    end if;
-
-    if op = 3 then
-        return sottrazione(a, b);
-    end if;
-
-    if op = 4 then
-        return divisione(a, b);
-    end if;
-
-end fun;
-
 fun somma(integer a, integer b):integer
     return  a + b;
 end fun;
@@ -46,6 +26,26 @@ fun divisione(integer a, integer b):integer
     return result;
 end fun;
 
+fun scegli_operazione(integer op, integer a, integer b):integer
+
+    if op = 1 then
+    	return somma(a, b);
+    end if;
+
+    if op = 2 then
+        return prodotto(a, b);
+    end if;
+
+    if op = 3 then
+        return sottrazione(a, b);
+    end if;
+
+    if op = 4 then
+        return divisione(a, b);
+    end if;
+
+end fun;
+
 # somma codice 1
 # prodotto codice 2
 # sottrazione codice 3
@@ -64,7 +64,7 @@ main
         ris := scegli_operazione(op, a, b);
         ?: "Risultato:" & ris;
 
-        % ris 'vuoi continuare? (si/no):\t';
+        % risposta 'vuoi continuare? (si/no):\t';
     end loop;
 
 end main;
