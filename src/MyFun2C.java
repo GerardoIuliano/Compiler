@@ -71,9 +71,9 @@ public class MyFun2C {
             cTemplate.write(cfile, root);
 
             //COMPILE C SOURCE FILE
-            compileCprog(filename);
+            //compileCprog(filename);
             //APRE TERMINALE
-            openTerminal();
+            //openTerminal();
         } else {
             System.out.println("File not found!");
         }
