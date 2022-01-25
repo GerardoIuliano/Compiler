@@ -66,7 +66,7 @@ int i=0;
         "    strcpy(num,BUFFER);\n" +
         "    return num;\n" +
         "}"
-        + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n}",vars, funs, main);
+        + "%s\n%s\nint main(int argc, char *argv[]){\n%s\n return 0;}",vars, funs, main);
   }
 
   @Override

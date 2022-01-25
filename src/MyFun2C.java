@@ -1,10 +1,13 @@
 import lexical.ArrayStringTable;
 import lexical.StringTable;
 import nodetype.NodeType;
+import org.w3c.dom.Document;
 import semantic.StackSymbolTable;
 import syntax.Program;
+import syntax.template.XMLTemplate;
 import template.CTemplate;
 import visitor.CodeGeneratorVisitor;
+import visitor.ConcreteVisitor;
 import visitor.ScopeCheckerVisitor;
 import visitor.TypeCheckerVisitor;
 import java.io.*;
@@ -30,6 +33,21 @@ public class MyFun2C {
 
             Program program = (Program) parser.parse().value;
 
+            //XML ABSTRACT SINTAX TREE
+            XMLTemplate xmlTemplate = new XMLTemplate();
+            Document xmlDocument = xmlTemplate.create().get();
+            ConcreteVisitor xmlVisitor = new ConcreteVisitor();
+            program.accept(xmlVisitor, xmlDocument);
+            //creazione file.xml
+            String fullName = args[0];
+            String dir = fullName.substring(0, 11);
+            String filename = fullName.substring(11, fullName.length() - 4);
+
+            xmlTemplate.write( dir + "ast_out\\" + filename + ".xml", xmlDocument);
+            System.out.println("Abstract Sintax Tree in xml generato!");
+            //STAMPA STRING TABLE
+            System.out.println("String Table:\n" + stringTable.toString());
+
             //VISITORS
             ScopeCheckerVisitor scopeCheckerVisitor = new ScopeCheckerVisitor();
             TypeCheckerVisitor typeCheckerVisitor = new TypeCheckerVisitor();
@@ -37,35 +55,36 @@ public class MyFun2C {
 
             //SCOPE CHECK
             program.accept(scopeCheckerVisitor, symbolTable);
-            System.out.println(symbolTable.toString());
+            System.out.println("Symbol table:\n"+ symbolTable.toString());
             symbolTable.resetLevel();
 
             //TYPE CHECK
             NodeType typeCheck = program.accept(typeCheckerVisitor, symbolTable);
-            System.out.println("TypeCheck: "+typeCheck.toString());
+            System.out.println("Type Checking Completato: " + typeCheck.toString());
             symbolTable.resetLevel();
 
             //GENERATE C CODE
+            String path = dir + "c_out\\" + filename + ".c";
             CTemplate cTemplate = new CTemplate();
-            File cfile = cTemplate.create("main").get();
+            File cfile = cTemplate.create(path).get();
             String root = program.accept(codeGeneratorVisitor, symbolTable);
             cTemplate.write(cfile, root);
 
             //COMPILE C SOURCE FILE
-            compileCprog();
-            //RUN FILE .exe
-            runCprog();
+            compileCprog(filename);
+            //APRE TERMINALE
+            openTerminal();
         } else {
             System.out.println("File not found!");
         }
     }
 
-    //compila ed esegue un file C
-    public static void compileCprog() throws IOException, InterruptedException {
+    //compila il file C
+    public static void compileCprog(String filename) throws IOException, InterruptedException {
         try {
-            boolean exist = Files.exists(Path.of("a.exe"));
+            boolean exist = Files.exists(Path.of("test_files\\exe_out\\" + filename+ ".exe"));
             if(exist)
-                Files.delete(Path.of("a.exe"));
+                Files.delete(Path.of("test_files\\exe_out\\" + filename+ ".exe"));
         } catch (Exception x) {
             System.err.format(x.toString());
         }
@@ -75,7 +94,7 @@ public class MyFun2C {
 
         commandsCompile.add("cmd.exe");
         commandsCompile.add("/C");
-        commandsCompile.add("gcc main.c");
+        commandsCompile.add("gcc" + " test_files\\c_out\\" + filename + ".c " + "-o " + "test_files\\exe_out\\" + filename);
 
         builder.command(commandsCompile);
 
@@ -85,11 +104,12 @@ public class MyFun2C {
         Executors.newSingleThreadExecutor().submit(streamGobbler);
         process.waitFor();
     }
-    public static void runCprog() throws IOException, InterruptedException {
+
+    //apre il terminale per eseguire l'eseguibile
+    public static void openTerminal() throws IOException, InterruptedException {
         Process p = Runtime.getRuntime().exec("cmd.exe /c start ");
         int exitCode = p.waitFor();
         assert exitCode == 0;
         System.exit(0);
     }
-
 }

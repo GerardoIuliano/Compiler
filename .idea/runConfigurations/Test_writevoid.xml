@@ -2,7 +2,7 @@
   <configuration default="false" name="Test_writevoid" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="MyFun2C" />
     <module name="iuliano-covino_es5_scg" />
-    <option name="PROGRAM_PARAMETERS" value="test_files\write_argomentoVoid" />
+    <option name="PROGRAM_PARAMETERS" value="test_files\write_argomentoVoid.txt" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

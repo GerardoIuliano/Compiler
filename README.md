@@ -1,13 +1,16 @@
 # Quinta esercitazione:  Modulo Analisi semantica e generazione codice C
 Iuliano Gerardo - Covino Francesco Pio
 
+Project SDK : oracle jdk 15.0.1
+Project Language Level: 15
+
 Linguaggio di programmazione definito per il corso di Compilatori anno 2021/2022.
 Il compilatore integra l'utilizzo di JFlex e JavaCup per l'implementazione del Lexer (per l'analisi lessicale)
 e del Parser (per l'analisi sintattica).
 
 La Classe MyFun2C mette insieme i linguaggi MyFun e C: si tratta di un compilatore completo che prende in input un codice MyFun, dopo aver svolto l'analisi
-lessicale, sintattica e semantica lo compila in un programma C. Completata la compilazione viene aperto un terminale da cui l'utente dovrà avviare l'applicazione
-digitando "a.exe" e premendo invio. Ciò consente di poter interagire dinamicamente con il programma.
+lessicale, sintattica e semantica lo compila in un programma C. Completata la compilazione viene aperto un terminale da cui l'utente dovrà dapprima cambiare directory
+con ```cd test_files``` e successivamente con```cd exe_out``` per poi avviare l'applicazione con ```<nomefile>.exe``` e premendo invio. Ciò consente di poter interagire dinamicamente con il programma.
 
 ## Specifiche lessicali
 
@@ -208,3 +211,51 @@ Program ::= VarDeclList FunList Main:;
 ```
 ### Regole di inferenza
 Sono presenti nel file inference_rules.pdf nella repository.
+
+### Generazione codice C
+Mediante il pattern Visitor viene generato il codice C equivalente al codice MyFun. Per adattare al meglio e favorire la correttezza della
+generazione di codice C, abbiamo preparato alcune funzioni e variabili che vengono aggiunte di default all'inizio di ogni programma C.
+1. Dichiarazione delle principali librerie di C  
+```
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<stdbool.h>
+#include<stdlib.h>
+#include<stddef.h>
+#include<string.h>
+```    
+2. MACRO che definisce lo spazio di default da allocare per le stringhe ```#define STRING 100 ```  
+4. Variabili globali utilizzate per la concatenazione e la conversione
+```  
+char BUFFER[STRING];
+char STRING_CAT[STRING];
+char STRING_CAT_1[STRING];
+```  
+5. Una funzione **concatena** che si occupa di concatenare due array di caratteri
+```  
+char* concatena(char* dest, char* src){
+    strcat(strcat(STRING_CAT, dest),src);
+    strcpy(STRING_CAT_1,STRING_CAT);
+    strcpy(STRING_CAT,"");
+    return STRING_CAT_1;
+}
+```  
+6. Una funzione **convertInt** per convertire un intero in un array di caratteri
+```  
+char* convertInt(int intero){
+    char * num = malloc(sizeof(char)*STRING);
+    itoa(intero,BUFFER,10);
+    strcpy(num,BUFFER);
+    return num;
+}
+```  
+7. Una funzione **convertReal** per convertire un reale in un array di caratteri
+```  
+char* convertReal(double real){
+    char * num = malloc(sizeof(char)*STRING);
+    gcvt(real,10,BUFFER);
+    strcpy(num,BUFFER);
+    return num;
+}
+```  
