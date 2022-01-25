@@ -39,11 +39,17 @@ public class MyFun2C {
             ConcreteVisitor xmlVisitor = new ConcreteVisitor();
             program.accept(xmlVisitor, xmlDocument);
             //creazione file.xml
+            String dir = "test_files";
+            String filename="";
             String fullName = args[0];
-            String dir = fullName.substring(0, 11);
-            String filename = fullName.substring(11, fullName.length() - 4);
+            if(fullName.contains(File.separator)){
+                filename = fullName.substring(fullName.lastIndexOf(File.separator)+1,fullName.length()-4);
+                System.out.println("FILENAME "+filename);
+            }else{
+                filename = fullName;
+            }
 
-            xmlTemplate.write( dir + "ast_out\\" + filename + ".xml", xmlDocument);
+            xmlTemplate.write( dir +File.separator+ "ast_out"+File.separator + filename + ".xml", xmlDocument);
             System.out.println("Abstract Sintax Tree in xml generato!");
             //STAMPA STRING TABLE
             System.out.println("String Table:\n" + stringTable.toString());
@@ -64,7 +70,7 @@ public class MyFun2C {
             symbolTable.resetLevel();
 
             //GENERATE C CODE
-            String path = dir + "c_out\\" + filename + ".c";
+            String path = dir +File.separator+ "c_out"+ File.separator+ filename + ".c";
             CTemplate cTemplate = new CTemplate();
             File cfile = cTemplate.create(path).get();
             String root = program.accept(codeGeneratorVisitor, symbolTable);
