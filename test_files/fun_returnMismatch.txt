@@ -1,4 +1,4 @@
-fun ritornoIntero(integer i): integer
+fun ritornoIntero(integer i): string
     return "i * 4";
 end fun;
 
