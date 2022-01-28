@@ -9,8 +9,7 @@ Il compilatore integra l'utilizzo di JFlex e JavaCup per l'implementazione del L
 e del Parser (per l'analisi sintattica).
 
 La Classe MyFun2C mette insieme i linguaggi MyFun e C: si tratta di un compilatore completo che prende in input un codice MyFun, dopo aver svolto l'analisi
-lessicale, sintattica e semantica lo compila in un programma C. Completata la compilazione viene aperto un terminale da cui l'utente dovrà dapprima cambiare directory
-con ```cd test_files``` e successivamente con```cd exe_out``` per poi avviare l'applicazione con ```<nomefile>.exe``` e premendo invio. Ciò consente di poter interagire dinamicamente con il programma.
+lessicale, sintattica e semantica genera un codice equivalente in C. Completata la generazione del codice in C, esso viene compilato con GCC e viene eseguito tramite terminale.
 
 ## Specifiche lessicali
 
