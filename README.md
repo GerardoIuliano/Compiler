@@ -1,4 +1,4 @@
-# Quinta esercitazione:  Modulo Analisi semantica e generazione codice C
+# Modulo di analisi Lessicale Sintattica Semantica e generazione del codice C
 Iuliano Gerardo - Covino Francesco Pio
 
 Project SDK : oracle jdk 15.0.1
